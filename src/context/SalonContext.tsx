@@ -19,6 +19,11 @@ import {
   BlockedClient,
   AbsenceBlock,
   WaitlistEntry
+  ,CommissionRule
+  ,RecurringDiscount
+  ,PayrollAdvance
+  ,PayrollSummary
+  ,RecurringDiscountFrequency
 } from '../types';
 import { logSystemEvent } from '../services/supabase';
 import { sendLocalPushNotification } from '../services/push';
@@ -29,6 +34,9 @@ interface SalonContextType {
   employees: Employee[];
   appointments: Appointment[];
   payroll: PayrollRecord[];
+  commissionRules: CommissionRule[];
+  recurringDiscounts: RecurringDiscount[];
+  payrollAdvances: PayrollAdvance[];
   stories: StoryMedia[];
   notifications: PushNotificationRecord[];
   appointmentReminders: AppointmentReminder[];
@@ -82,6 +90,12 @@ interface SalonContextType {
   createLandingPage: (lp: Omit<LandingPageCampaign, 'id' | 'views_count' | 'conversions_count' | 'created_at'>) => void;
   trackLandingPageView: (slug: string) => void;
   registerCommissionPayout: (employeeId: string, mesReferencia: string) => void;
+  upsertCommissionRule: (rule: Omit<CommissionRule, 'id' | 'created_at'>) => void;
+  addRecurringDiscount: (discount: Omit<RecurringDiscount, 'id' | 'created_at'>) => void;
+  removeRecurringDiscount: (id: string) => void;
+  addPayrollAdvance: (advance: Omit<PayrollAdvance, 'id' | 'created_at' | 'status'>) => void;
+  markAdvanceDiscounted: (id: string) => void;
+  calculatePayroll: (employeeId: string, periodStart: string, periodEnd: string) => PayrollSummary;
 
   // New Actions for the 5 Features
   saveFichaTecnica: (ficha: Omit<FichaTecnica, 'id' | 'created_at' | 'updated_at'>) => void;
@@ -333,6 +347,21 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return p ? JSON.parse(p) : [];
   });
 
+  const [commissionRules, setCommissionRules] = useState<CommissionRule[]>(() => {
+    const stored = localStorage.getItem('salon_commission_rules');
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  const [recurringDiscounts, setRecurringDiscounts] = useState<RecurringDiscount[]>(() => {
+    const stored = localStorage.getItem('salon_recurring_discounts');
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  const [payrollAdvances, setPayrollAdvances] = useState<PayrollAdvance[]>(() => {
+    const stored = localStorage.getItem('salon_payroll_advances');
+    return stored ? JSON.parse(stored) : [];
+  });
+
   const [stories, setStories] = useState<StoryMedia[]>(() => {
     const st = localStorage.getItem('salon_stories');
     return st ? JSON.parse(st) : [];
@@ -406,6 +435,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('salon_employees', JSON.stringify(employees)); }, [employees]);
   useEffect(() => { localStorage.setItem('salon_appointments', JSON.stringify(appointments)); }, [appointments]);
   useEffect(() => { localStorage.setItem('salon_payroll', JSON.stringify(payroll)); }, [payroll]);
+  useEffect(() => { localStorage.setItem('salon_commission_rules', JSON.stringify(commissionRules)); }, [commissionRules]);
+  useEffect(() => { localStorage.setItem('salon_recurring_discounts', JSON.stringify(recurringDiscounts)); }, [recurringDiscounts]);
+  useEffect(() => { localStorage.setItem('salon_payroll_advances', JSON.stringify(payrollAdvances)); }, [payrollAdvances]);
   useEffect(() => { localStorage.setItem('salon_stories', JSON.stringify(stories)); }, [stories]);
   useEffect(() => { localStorage.setItem('salon_notifications', JSON.stringify(notifications)); }, [notifications]);
   useEffect(() => { localStorage.setItem('salon_appointment_reminders', JSON.stringify(appointmentReminders)); }, [appointmentReminders]);
@@ -634,24 +666,92 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const emp = employees.find(e => e.id === employeeId);
     if (!emp) return;
 
-    const completedApps = appointments.filter(a => a.profissional_id === employeeId && a.status === 'concluido');
-    const totalRevenue = completedApps.reduce((sum, a) => sum + a.valor_total, 0);
-    const comissaoAccrued = (totalRevenue * emp.comissao_percentual) / 100;
+    const [year, month] = mesReferencia.split('-').map(Number);
+    const summary = calculatePayroll(employeeId, `${mesReferencia}-01`, new Date(year, month, 0).toISOString().slice(0, 10));
 
     const record: PayrollRecord = {
       id: 'pay-' + Date.now(),
       employee_id: employeeId,
       mes_referencia: mesReferencia,
-      total_comissoes: comissaoAccrued,
-      descontos_vales: 0.00,
-      valor_pago: comissaoAccrued,
+      total_comissoes: summary.total_bruto,
+      descontos_vales: summary.total_vales + summary.total_descontos,
+      valor_pago: summary.valor_liquido,
       status_pagamento: 'pago',
       data_pagamento: new Date().toISOString(),
       employee_name: emp.nome
     };
 
     setPayroll(prev => [record, ...prev]);
-    logSystemEvent('FOLHA', `Comissão de R$ ${comissaoAccrued.toFixed(2)} paga para ${emp.nome}`, 'success');
+    setPayrollAdvances(prev => prev.map(advance => {
+      const advanceDate = new Date(`${advance.data}T00:00:00`).getTime();
+      const periodEnd = new Date(summary.periodo_fim + 'T23:59:59').getTime();
+      return advance.employee_id === employeeId && advance.status === 'pendente' && advanceDate <= periodEnd
+        ? { ...advance, status: 'descontado' }
+        : advance;
+    }));
+    logSystemEvent('FOLHA', `Folha líquida de R$ ${summary.valor_liquido.toFixed(2)} paga para ${emp.nome}`, 'success');
+  };
+
+  const upsertCommissionRule = (ruleData: Omit<CommissionRule, 'id' | 'created_at'>) => {
+    const existing = commissionRules.find(rule => rule.employee_id === ruleData.employee_id && rule.servico_id === ruleData.servico_id);
+    if (existing) {
+      setCommissionRules(prev => prev.map(rule => rule.id === existing.id ? { ...rule, ...ruleData } : rule));
+      return;
+    }
+    setCommissionRules(prev => [{ ...ruleData, id: `com-${Date.now()}`, created_at: new Date().toISOString() }, ...prev]);
+  };
+
+  const addRecurringDiscount = (discountData: Omit<RecurringDiscount, 'id' | 'created_at'>) => {
+    setRecurringDiscounts(prev => [{ ...discountData, id: `des-${Date.now()}`, created_at: new Date().toISOString() }, ...prev]);
+  };
+
+  const removeRecurringDiscount = (id: string) => {
+    setRecurringDiscounts(prev => prev.filter(discount => discount.id !== id));
+  };
+
+  const addPayrollAdvance = (advanceData: Omit<PayrollAdvance, 'id' | 'created_at' | 'status'>) => {
+    setPayrollAdvances(prev => [{ ...advanceData, id: `val-${Date.now()}`, status: 'pendente', created_at: new Date().toISOString() }, ...prev]);
+  };
+
+  const markAdvanceDiscounted = (id: string) => {
+    setPayrollAdvances(prev => prev.map(advance => advance.id === id ? { ...advance, status: 'descontado' } : advance));
+  };
+
+  const calculatePayroll = (employeeId: string, periodStart: string, periodEnd: string): PayrollSummary => {
+    const start = new Date(`${periodStart}T00:00:00`).getTime();
+    const end = new Date(`${periodEnd}T23:59:59`).getTime();
+    const completedApps = appointments.filter(appointment => {
+      const time = new Date(appointment.data_hora).getTime();
+      return appointment.profissional_id === employeeId && appointment.status === 'concluido' && time >= start && time <= end;
+    });
+    const employee = employees.find(item => item.id === employeeId);
+    const totalBruto = completedApps.reduce((total, appointment) => {
+      const rule = commissionRules.find(item => item.employee_id === employeeId && item.servico_id === appointment.servico_id);
+      const percentage = rule?.percentual ?? employee?.comissao_percentual ?? 0;
+      return total + (appointment.valor_total * percentage) / 100;
+    }, 0);
+    const totalVales = payrollAdvances
+      .filter(advance => advance.employee_id === employeeId && advance.status === 'pendente' && new Date(`${advance.data}T00:00:00`).getTime() <= end)
+      .reduce((total, advance) => total + advance.valor, 0);
+    const days = Math.max(1, Math.floor((end - start) / 86400000) + 1);
+    const totalDescontos = recurringDiscounts.filter(discount => discount.employee_id === employeeId && discount.ativo)
+      .reduce((total, discount) => {
+        const occurrences = discount.frequencia === 'diario' ? days
+          : discount.frequencia === 'semanal' ? Math.ceil(days / 7)
+          : discount.frequencia === 'quinzenal' ? Math.ceil(days / 15)
+          : Math.max(1, new Date(`${periodEnd}T00:00:00`).getMonth() - new Date(`${periodStart}T00:00:00`).getMonth() + 1);
+        return total + discount.valor * occurrences;
+      }, 0);
+    return {
+      employee_id: employeeId,
+      periodo_inicio: periodStart,
+      periodo_fim: periodEnd,
+      total_bruto: totalBruto,
+      total_vales: totalVales,
+      total_descontos: totalDescontos,
+      valor_liquido: Math.max(0, totalBruto - totalVales - totalDescontos),
+      atendimentos: completedApps.length
+    };
   };
 
   // Security & Scheduling Actions
@@ -817,6 +917,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         employees,
         appointments,
         payroll,
+        commissionRules,
+        recurringDiscounts,
+        payrollAdvances,
         stories,
         notifications,
         appointmentReminders,
@@ -852,6 +955,12 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         createLandingPage,
         trackLandingPageView,
         registerCommissionPayout,
+        upsertCommissionRule,
+        addRecurringDiscount,
+        removeRecurringDiscount,
+        addPayrollAdvance,
+        markAdvanceDiscounted,
+        calculatePayroll,
         saveFichaTecnica,
         getFichaTecnicaByPhone,
         addEstoqueItem,

@@ -1,17 +1,49 @@
 import React, { useState } from 'react';
-import { Users, DollarSign, Plus, CheckCircle2, Award, Percent, FileText } from 'lucide-react';
+import { Users, DollarSign, Plus, CheckCircle2, Percent, Trash2 } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
+import { RecurringDiscountFrequency } from '../../types';
 
 export const PayrollManager: React.FC = () => {
-  const { employees, appointments, payroll, addEmployee, registerCommissionPayout } = useSalon();
+  const { employees, services, appointments, payroll, commissionRules, recurringDiscounts, payrollAdvances, addEmployee, registerCommissionPayout, upsertCommissionRule, addRecurringDiscount, removeRecurringDiscount, addPayrollAdvance, calculatePayroll } = useSalon();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [nome, setNome] = useState('');
   const [especialidade, setEspecialidade] = useState('');
   const [comissao, setComissao] = useState(45.0);
   const [fotoUrl, setFotoUrl] = useState('');
+  const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(employees[0]?.id || '');
+  const [ruleServiceId, setRuleServiceId] = useState(services[0]?.id || '');
+  const [rulePercentage, setRulePercentage] = useState(45);
+  const [discountDescription, setDiscountDescription] = useState('');
+  const [discountValue, setDiscountValue] = useState(0);
+  const [discountFrequency, setDiscountFrequency] = useState<RecurringDiscountFrequency>('mensal');
+  const [advanceValue, setAdvanceValue] = useState(0);
+  const [advanceDate, setAdvanceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [advanceNote, setAdvanceNote] = useState('');
 
-  const currentMonthStr = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+  const currentMonthStr = period;
+  const [periodYear, periodMonth] = period.split('-').map(Number);
+  const periodStart = `${period}-01`;
+  const periodEnd = new Date(periodYear, periodMonth, 0).toISOString().slice(0, 10);
+  const selectedSummary = calculatePayroll(selectedEmployeeId, periodStart, periodEnd);
+
+  const addRule = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (selectedEmployeeId && ruleServiceId) upsertCommissionRule({ employee_id: selectedEmployeeId, servico_id: ruleServiceId, percentual: Number(rulePercentage) });
+  };
+  const addDiscount = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedEmployeeId || !discountDescription.trim() || discountValue <= 0) return;
+    addRecurringDiscount({ employee_id: selectedEmployeeId, descricao: discountDescription, valor: Number(discountValue), frequencia: discountFrequency, ativo: true });
+    setDiscountDescription(''); setDiscountValue(0);
+  };
+  const addAdvance = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedEmployeeId || advanceValue <= 0) return;
+    addPayrollAdvance({ employee_id: selectedEmployeeId, valor: Number(advanceValue), data: advanceDate, observacao: advanceNote });
+    setAdvanceValue(0); setAdvanceNote('');
+  };
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,10 +74,12 @@ export const PayrollManager: React.FC = () => {
             Folha de Pagamento & Comissões da Equipe
           </h3>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Cálculo automático de repasses acumulados com base nos atendimentos concluídos.
+            Cálculo automático de comissões, vales e descontos no período selecionado.
           </p>
         </div>
 
+        <div className="flex items-center gap-2">
+        <input type="month" value={period} onChange={e => setPeriod(e.target.value)} className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white" />
         <button
           onClick={() => setShowAddModal(true)}
           className="rose-gradient-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center space-x-1.5 shadow"
@@ -53,15 +87,51 @@ export const PayrollManager: React.FC = () => {
           <Plus className="w-4 h-4" />
           <span>Cadastrar Colaborador</span>
         </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <Summary label="Total Bruto de Comissões" value={selectedSummary.total_bruto} color="text-emerald-400" />
+        <Summary label="Vales / Adiantamentos" value={selectedSummary.total_vales} color="text-amber-400" />
+        <Summary label="Descontos Recorrentes" value={selectedSummary.total_descontos} color="text-orange-400" />
+        <Summary label="Valor Líquido a Pagar" value={selectedSummary.valor_liquido} color="text-white" />
+      </div>
+      <p className="text-xs text-zinc-500 mb-5">{selectedSummary.atendimentos} atendimentos concluídos • {money(selectedSummary.total_bruto)} bruto - {money(selectedSummary.total_vales)} vales - {money(selectedSummary.total_descontos)} descontos = <strong className="text-white">{money(selectedSummary.valor_liquido)} líquido</strong></p>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <form onSubmit={addRule} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-3">
+          <h4 className="text-sm font-bold text-white flex items-center gap-2"><Percent className="w-4 h-4 text-rose-400" /> Comissão por serviço</h4>
+          <select value={selectedEmployeeId} onChange={e => setSelectedEmployeeId(e.target.value)} className="field">{employees.map(emp => <option key={emp.id} value={emp.id}>{emp.nome}</option>)}</select>
+          <select value={ruleServiceId} onChange={e => setRuleServiceId(e.target.value)} className="field">{services.map(service => <option key={service.id} value={service.id}>{service.nome}</option>)}</select>
+          <input type="number" min="0" max="100" step="0.5" value={rulePercentage} onChange={e => setRulePercentage(Number(e.target.value))} className="field" placeholder="Percentual" />
+          <button className="action-btn">Salvar percentual</button>
+          {commissionRules.filter(rule => rule.employee_id === selectedEmployeeId).map(rule => <p key={rule.id} className="text-[11px] text-zinc-400">{services.find(service => service.id === rule.servico_id)?.nome}: <strong className="text-white">{rule.percentual}%</strong></p>)}
+        </form>
+        <form onSubmit={addDiscount} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-3">
+          <h4 className="text-sm font-bold text-white">Desconto recorrente</h4>
+          <input value={discountDescription} onChange={e => setDiscountDescription(e.target.value)} placeholder="Descrição" className="field" />
+          <input type="number" min="0" step="0.01" value={discountValue} onChange={e => setDiscountValue(Number(e.target.value))} placeholder="Valor" className="field" />
+          <select value={discountFrequency} onChange={e => setDiscountFrequency(e.target.value as RecurringDiscountFrequency)} className="field"><option value="diario">Diário</option><option value="semanal">Semanal</option><option value="quinzenal">Quinzenal</option><option value="mensal">Mensal</option></select>
+          <button className="action-btn">Lançar desconto</button>
+          {recurringDiscounts.filter(discount => discount.employee_id === selectedEmployeeId).map(discount => <div key={discount.id} className="flex justify-between text-[11px] text-zinc-400"><span>{discount.descricao} ({discount.frequencia}) - {money(discount.valor)}</span><button type="button" onClick={() => removeRecurringDiscount(discount.id)} className="text-red-400"><Trash2 className="w-3.5 h-3.5" /></button></div>)}
+        </form>
+        <form onSubmit={addAdvance} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-3">
+          <h4 className="text-sm font-bold text-white">Vale / Adiantamento</h4>
+          <input type="number" min="0" step="0.01" value={advanceValue} onChange={e => setAdvanceValue(Number(e.target.value))} placeholder="Valor" className="field" />
+          <input type="date" value={advanceDate} onChange={e => setAdvanceDate(e.target.value)} className="field" />
+          <input value={advanceNote} onChange={e => setAdvanceNote(e.target.value)} placeholder="Observação" className="field" />
+          <button className="action-btn">Registrar vale</button>
+          {payrollAdvances.filter(advance => advance.employee_id === selectedEmployeeId && advance.status === 'pendente').map(advance => <p key={advance.id} className="text-[11px] text-zinc-400">{money(advance.valor)} em {advance.data} {advance.observacao && `- ${advance.observacao}`}</p>)}
+        </form>
       </div>
 
       {/* Employees Commission Summary Table */}
       <div className="space-y-4">
         {employees.map((emp) => {
           // Calculate total completed revenue for this employee
-          const completedApps = appointments.filter(a => a.profissional_id === emp.id && a.status === 'concluido');
+          const completedApps = appointments.filter(a => a.profissional_id === emp.id && a.status === 'concluido' && a.data_hora.slice(0, 7) === currentMonthStr);
           const totalRevenue = completedApps.reduce((acc, a) => acc + a.valor_total, 0);
-          const comissaoAcumulada = (totalRevenue * emp.comissao_percentual) / 100;
+          const comissaoAcumulada = calculatePayroll(emp.id, periodStart, periodEnd).valor_liquido;
 
           // Check if paid for current month
           const isPaidThisMonth = payroll.some(p => p.employee_id === emp.id && p.mes_referencia === currentMonthStr && p.status_pagamento === 'pago');
@@ -85,7 +155,7 @@ export const PayrollManager: React.FC = () => {
                     </span>
                   </h4>
                   <p className="text-xs text-zinc-400">{emp.especialidade}</p>
-                  <p className="text-[11px] text-zinc-500 mt-1">
+                    <p className="text-[11px] text-zinc-500 mt-1">
                     Atendimentos concluídos: <strong className="text-zinc-300">{completedApps.length}</strong> | Faturamento total gerado: <strong className="text-white">R$ {totalRevenue.toFixed(2)}</strong>
                   </p>
                 </div>
@@ -94,7 +164,7 @@ export const PayrollManager: React.FC = () => {
               {/* Commission & Action */}
               <div className="flex items-center space-x-4 shrink-0 w-full md:w-auto justify-between md:justify-end pt-3 md:pt-0 border-t md:border-t-0 border-zinc-800">
                 <div>
-                  <p className="text-[11px] text-zinc-400 font-semibold uppercase">Comissão Acumulada</p>
+                  <p className="text-[11px] text-zinc-400 font-semibold uppercase">Líquido a Pagar</p>
                   <p className="text-xl font-extrabold text-emerald-400">
                     R$ {comissaoAcumulada.toFixed(2).replace('.', ',')}
                   </p>
@@ -111,7 +181,7 @@ export const PayrollManager: React.FC = () => {
                     className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center space-x-1.5 shadow disabled:opacity-40"
                   >
                     <DollarSign className="w-4 h-4" />
-                    <span>Pagar Comissão</span>
+                    <span>Registrar Pagamento</span>
                   </button>
                 )}
               </div>
@@ -196,3 +266,12 @@ export const PayrollManager: React.FC = () => {
     </div>
   );
 };
+
+const money = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
+
+const Summary: React.FC<{ label: string; value: number; color: string }> = ({ label, value, color }) => (
+  <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4">
+    <p className="text-[10px] uppercase font-bold text-zinc-500">{label}</p>
+    <p className={`text-xl font-extrabold mt-1 ${color}`}>{money(value)}</p>
+  </div>
+);

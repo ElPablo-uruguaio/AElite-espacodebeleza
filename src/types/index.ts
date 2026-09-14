@@ -107,6 +107,47 @@ export interface PayrollRecord {
   employee_name?: string;
 }
 
+export type RecurringDiscountFrequency = 'diario' | 'semanal' | 'quinzenal' | 'mensal';
+
+export interface CommissionRule {
+  id: string;
+  employee_id: string;
+  servico_id: string;
+  percentual: number;
+  created_at: string;
+}
+
+export interface RecurringDiscount {
+  id: string;
+  employee_id: string;
+  descricao: string;
+  valor: number;
+  frequencia: RecurringDiscountFrequency;
+  ativo: boolean;
+  created_at: string;
+}
+
+export interface PayrollAdvance {
+  id: string;
+  employee_id: string;
+  valor: number;
+  data: string;
+  observacao: string;
+  status: 'pendente' | 'descontado';
+  created_at: string;
+}
+
+export interface PayrollSummary {
+  employee_id: string;
+  periodo_inicio: string;
+  periodo_fim: string;
+  total_bruto: number;
+  total_vales: number;
+  total_descontos: number;
+  valor_liquido: number;
+  atendimentos: number;
+}
+
 export interface StoryMedia {
   id: string;
   titulo?: string;
