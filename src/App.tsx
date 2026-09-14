@@ -4,6 +4,7 @@ import { PublicHome } from './pages/PublicHome';
 import { GestoraDashboard } from './pages/GestoraDashboard';
 import { DevMasterDashboard } from './pages/DevMasterDashboard';
 import { PromotionalLanding } from './pages/PromotionalLanding';
+import { CollaboratorDashboard } from './pages/CollaboratorDashboard';
 
 export const App: React.FC = () => {
   const { role, isLoggedIn } = useAuth();
@@ -52,6 +53,9 @@ export const App: React.FC = () => {
     if (isLoggedIn && role === 'dev_admin') {
       return <DevMasterDashboard />;
     }
+    if (isLoggedIn && role === 'colaborador') {
+      return <CollaboratorDashboard />;
+    }
     return <GestoraDashboard />;
   }
 
@@ -66,6 +70,9 @@ export const App: React.FC = () => {
     }
     if (role === 'admin' && (currentPath === '/admin' || currentPath === '/gestora' || currentHash === '#admin' || currentHash === '#gestora')) {
       return <GestoraDashboard />;
+    }
+    if (role === 'colaborador') {
+      return <CollaboratorDashboard />;
     }
   }
 

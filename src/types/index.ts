@@ -8,12 +8,23 @@ export interface Permissions {
   canEditSettings: boolean;
 }
 
+export interface TeamPermissions extends Permissions {
+  canEditAgenda: boolean;
+  canViewComissoes: boolean;
+  canEditComissoes: boolean;
+  canEditEstoque: boolean;
+  canEditFinanceiro: boolean;
+  canManageBlockedClients: boolean;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
   role: UserRole;
   permissions?: Permissions;
+  team_permissions?: TeamPermissions;
+  employee_id?: string;
   phone?: string;
   created_at?: string;
 }

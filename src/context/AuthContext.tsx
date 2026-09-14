@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserRole, UserProfile, Permissions } from '../types';
+import { UserRole, UserProfile } from '../types';
 import { logSystemEvent } from '../services/supabase';
+import { getTeamPermissions } from '../utils/permissions';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -39,6 +40,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
+  useEffect(() => {
+    if (user?.role === 'colaborador' && !user.team_permissions) {
+      setUser(prev => prev ? {
+        ...prev,
+        employee_id: prev.employee_id || 'emp-1',
+        team_permissions: getTeamPermissions(`colab-${prev.employee_id || 'emp-1'}`),
+      } : prev);
+    }
+  }, [user]);
+
   const loginAsGestora = async (password: string): Promise<boolean> => {
     const storedPass = getStoredPassword('admin');
     if (password === storedPass) {
@@ -72,12 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: 'equipe@espacobelezavip.com.br',
         full_name: 'Equipe de Atendimento',
         role: 'colaborador',
+        employee_id: 'emp-1',
+        team_permissions: getTeamPermissions('colab-emp-1'),
         permissions: {
-          canViewAgenda: true,
-          canViewEstoque: false,
-          canViewFinanceiro: false,
-          canManageClients: false,
-          canEditSettings: false
+          canViewAgenda: getTeamPermissions('colab-emp-1').canViewAgenda,
+          canViewEstoque: getTeamPermissions('colab-emp-1').canViewEstoque,
+          canViewFinanceiro: getTeamPermissions('colab-emp-1').canViewFinanceiro,
+          canManageClients: getTeamPermissions('colab-emp-1').canManageClients,
+          canEditSettings: getTeamPermissions('colab-emp-1').canEditSettings
         },
       };
       setUser(colabUser);
