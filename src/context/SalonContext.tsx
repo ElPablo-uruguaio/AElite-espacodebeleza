@@ -18,7 +18,8 @@ import {
   CartaoFidelidade,
   BlockedClient,
   AbsenceBlock,
-  WaitlistEntry
+  WaitlistEntry,
+  Client
   ,CommissionRule
   ,RecurringDiscount
   ,PayrollAdvance
@@ -33,6 +34,7 @@ interface SalonContextType {
   services: ServiceItem[];
   employees: Employee[];
   appointments: Appointment[];
+  clients: Client[];
   payroll: PayrollRecord[];
   commissionRules: CommissionRule[];
   recurringDiscounts: RecurringDiscount[];
@@ -71,6 +73,9 @@ interface SalonContextType {
   deleteEmployee: (id: string) => void;
 
   createAppointment: (appointmentData: Omit<Appointment, 'id' | 'created_at'>) => Appointment | null;
+  upsertClient: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => Client;
+  importClients: (clients: Array<Omit<Client, 'id' | 'created_at' | 'updated_at'>>) => number;
+  checkBirthdayClients: () => Client[];
   updateAppointmentStatus: (id: string, status: AppointmentStatus) => void;
   checkoutAppointment: (id: string, metodoPagamento: string) => void;
 
@@ -342,6 +347,11 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     ];
   });
 
+  const [clients, setClients] = useState<Client[]>(() => {
+    const stored = localStorage.getItem('salon_clients');
+    return stored ? JSON.parse(stored) : [];
+  });
+
   const [payroll, setPayroll] = useState<PayrollRecord[]>(() => {
     const p = localStorage.getItem('salon_payroll');
     return p ? JSON.parse(p) : [];
@@ -434,6 +444,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('salon_services', JSON.stringify(services)); }, [services]);
   useEffect(() => { localStorage.setItem('salon_employees', JSON.stringify(employees)); }, [employees]);
   useEffect(() => { localStorage.setItem('salon_appointments', JSON.stringify(appointments)); }, [appointments]);
+  useEffect(() => { localStorage.setItem('salon_clients', JSON.stringify(clients)); }, [clients]);
   useEffect(() => { localStorage.setItem('salon_payroll', JSON.stringify(payroll)); }, [payroll]);
   useEffect(() => { localStorage.setItem('salon_commission_rules', JSON.stringify(commissionRules)); }, [commissionRules]);
   useEffect(() => { localStorage.setItem('salon_recurring_discounts', JSON.stringify(recurringDiscounts)); }, [recurringDiscounts]);
@@ -500,6 +511,52 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     logSystemEvent('AGENDA', `Agendamento criado para ${newApp.cliente_nome}`, 'success');
     return newApp;
   };
+
+  const upsertClient = (clientData: Omit<Client, 'id' | 'created_at' | 'updated_at'>): Client => {
+    const cleanPhone = clientData.telefone.replace(/\D/g, '');
+    const cleanCpf = clientData.cpf?.replace(/\D/g, '');
+    const existing = clients.find(client =>
+      (cleanPhone && client.telefone.replace(/\D/g, '') === cleanPhone) ||
+      (cleanCpf && client.cpf?.replace(/\D/g, '') === cleanCpf)
+    );
+    const now = new Date().toISOString();
+    if (existing) {
+      const updated = { ...existing, ...clientData, id: existing.id, updated_at: now };
+      setClients(prev => prev.map(client => client.id === existing.id ? updated : client));
+      return updated;
+    }
+    const created = { ...clientData, id: `cli-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, created_at: now, updated_at: now };
+    setClients(prev => [created, ...prev]);
+    return created;
+  };
+
+  const importClients = (clientList: Array<Omit<Client, 'id' | 'created_at' | 'updated_at'>>): number => {
+    clientList.forEach(client => upsertClient(client));
+    return clientList.length;
+  };
+
+  const checkBirthdayClients = (): Client[] => {
+    const today = new Date();
+    return clients.filter(client => {
+      if (!client.data_nascimento) return false;
+      const date = new Date(`${client.data_nascimento}T12:00:00`);
+      return date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
+    });
+  };
+
+  useEffect(() => {
+    const birthdayCount = checkBirthdayClients().length;
+    if (birthdayCount > 0) {
+      logSystemEvent('CLIENTES', `${birthdayCount} aniversariante(s) identificado(s) hoje.`, 'info');
+    }
+    const intervalId = window.setInterval(() => {
+      const currentBirthdayCount = checkBirthdayClients().length;
+      if (currentBirthdayCount > 0) {
+        logSystemEvent('CLIENTES', `${currentBirthdayCount} aniversariante(s) identificado(s) hoje.`, 'info');
+      }
+    }, 24 * 60 * 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [clients]);
 
   const updateAppointmentStatus = (id: string, status: AppointmentStatus) => {
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
@@ -916,6 +973,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         services,
         employees,
         appointments,
+        clients,
         payroll,
         commissionRules,
         recurringDiscounts,
@@ -941,6 +999,9 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateEmployee,
         deleteEmployee,
         createAppointment,
+        upsertClient,
+        importClients,
+        checkBirthdayClients,
         updateAppointmentStatus,
         checkoutAppointment,
         addStory,

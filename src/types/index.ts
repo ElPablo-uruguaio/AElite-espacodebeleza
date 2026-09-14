@@ -76,6 +76,7 @@ export interface Appointment {
   cliente_nome: string;
   cliente_phone: string;
   cliente_cpf?: string;
+  cliente_data_nascimento?: string;
   data_hora: string; // ISO string
   servico_id: string;
   profissional_id: string;
@@ -93,6 +94,16 @@ export interface Appointment {
   // New fields for payment handling
   sinal_pago?: boolean;
   valor_sinal?: number;
+}
+
+export interface Client {
+  id: string;
+  nome: string;
+  cpf?: string;
+  telefone: string;
+  data_nascimento?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PayrollRecord {

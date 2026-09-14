@@ -31,6 +31,12 @@ export function createWhatsAppReminderLink({
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
 }
 
+export function createWhatsAppBirthdayLink(phone: string, clienteNome: string, nomeSalao = 'Espaço Beleza VIP'): string {
+  const cleanPhone = formatPhoneForWhatsApp(phone);
+  const text = `Olá, *${clienteNome}*! 🎉\n\nA equipe do *${nomeSalao}* deseja um feliz aniversário, cheio de beleza, alegria e momentos especiais! 💖\n\nEsperamos comemorar com você em breve. ✨`;
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+}
+
 export function createWhatsAppConfirmationLink({
   phone,
   clienteNome,

@@ -14,13 +14,14 @@ import { StockManager } from '../components/gestora/StockManager';
 import { AbsenceManager } from '../components/gestora/AbsenceManager';
 import { StealthBlockManager } from '../components/gestora/StealthBlockManager';
 import { TeamPermissionsManager } from '../components/gestora/TeamPermissionsManager';
+import { ClientManager } from '../components/gestora/ClientManager';
 import { MediaManager } from '../components/gestora/MediaManager';
 import { PDVCheckout } from '../components/client/PDVCheckout';
 import { CalendarClock, ShieldAlert, Package, FileText, Calendar, Users, MessageSquare, Bell, Target, QrCode, Settings, Scissors, Home, LogOut, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 export const GestoraDashboard: React.FC = () => {
 
-  const [activeTab, setActiveTab] = useState<'agenda' | 'payroll' | 'cms' | 'reviews' | 'notifications' | 'reminders' | 'qrcode' | 'landing_pages' | 'estoque' | 'fichas' | 'midias' | 'ausencias' | 'stealth' | 'permissions'>('agenda');
+  const [activeTab, setActiveTab] = useState<'agenda' | 'payroll' | 'cms' | 'reviews' | 'notifications' | 'reminders' | 'clients' | 'qrcode' | 'landing_pages' | 'estoque' | 'fichas' | 'midias' | 'ausencias' | 'stealth' | 'permissions'>('agenda');
   const [selectedPDVAppointment, setSelectedPDVAppointment] = useState<any>(null);
   const { settings } = useSalon();
   const { user, logout } = useAuth();
@@ -142,6 +143,18 @@ export const GestoraDashboard: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab('clients')}
+            className={`p-4 rounded-2xl font-bold text-xs flex flex-col items-center justify-center space-y-2 border transition shadow ${
+              activeTab === 'clients'
+                ? 'bg-rose-600 text-white border-rose-500 shadow-rose-600/30'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+            }`}
+          >
+            <Users className="w-6 h-6" />
+            <span>Gestão de Clientes</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('landing_pages')}
             className={`p-4 rounded-2xl font-bold text-xs flex flex-col items-center justify-center space-y-2 border transition shadow ${
               activeTab === 'landing_pages'
@@ -250,6 +263,7 @@ export const GestoraDashboard: React.FC = () => {
         {activeTab === 'reviews' && <ReviewsModeration />}
         {activeTab === 'notifications' && <NotificationsManager />}
         {activeTab === 'reminders' && <AppointmentRemindersManager />}
+        {activeTab === 'clients' && <ClientManager />}
         {activeTab === 'landing_pages' && <LandingPageManager />}
         {activeTab === 'qrcode' && <QRCodeManager />}
         {activeTab === 'midias' && <MediaManager />}

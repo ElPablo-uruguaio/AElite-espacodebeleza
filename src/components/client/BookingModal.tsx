@@ -20,7 +20,7 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onClose }) => {
-  const { services, employees, createAppointment, addToWaitlist, isBlockedClient, scheduleAppointmentReminders } = useSalon();
+  const { services, employees, createAppointment, addToWaitlist, isBlockedClient, scheduleAppointmentReminders, upsertClient } = useSalon();
 
   const [step, setStep] = useState<number>(1);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(initialService || services[0] || null);
@@ -30,6 +30,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
   const [clientName, setClientName] = useState<string>('');
   const [clientPhone, setClientPhone] = useState<string>('');
   const [clientCpf, setClientCpf] = useState<string>('');
+  const [clientBirthDate, setClientBirthDate] = useState<string>('');
   const [createdAppointmentId, setCreatedAppointmentId] = useState<string | null>(null);
   
   const isBlocked = isBlockedClient(clientPhone, clientCpf);
@@ -67,6 +68,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
       cliente_nome: clientName,
       cliente_phone: clientPhone,
       cliente_cpf: clientCpf,
+      cliente_data_nascimento: clientBirthDate,
       data_hora: dataHoraIso,
       servico_id: selectedService.id,
       profissional_id: selectedEmployee ? selectedEmployee.id : employees[0]?.id || '',
@@ -76,6 +78,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
     });
 
     if (!app) return;
+    upsertClient({ nome: clientName, cpf: clientCpf, telefone: clientPhone, data_nascimento: clientBirthDate });
     scheduleAppointmentReminders(app, selectedService.nome);
     setCreatedAppointmentId(app.id);
     setStep(4); // Success step
@@ -234,6 +237,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
                   value={clientCpf}
                   onChange={(e) => setClientCpf(e.target.value)}
                   placeholder="Digite seu CPF"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">Data de nascimento (opcional)</label>
+                <input
+                  type="date"
+                  value={clientBirthDate}
+                  onChange={(e) => setClientBirthDate(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500"
                 />
               </div>
