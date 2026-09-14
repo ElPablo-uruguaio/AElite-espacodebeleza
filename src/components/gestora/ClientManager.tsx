@@ -99,10 +99,10 @@ export const ClientManager: React.FC = () => {
       {importMessage && <p className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-xl px-4 py-3">{importMessage}</p>}
 
       <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-zinc-950 border border-zinc-800 rounded-2xl p-4">
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome completo *" className="field" required />
-        <input value={cpf} onChange={e => setCpf(e.target.value)} placeholder="CPF" className="field" />
-        <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefone *" className="field" required />
-        <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} className="field" />
+        <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome completo *" className="bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-rose-500" required />
+        <input value={cpf} onChange={e => setCpf(e.target.value)} placeholder="CPF" className="bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-rose-500" />
+        <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefone *" className="bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-rose-500" required />
+        <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} className="bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500" />
         <button className="action-btn"><Plus className="w-4 h-4" /> Cadastrar</button>
       </form>
 
