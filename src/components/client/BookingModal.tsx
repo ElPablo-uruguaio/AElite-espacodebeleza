@@ -20,7 +20,7 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onClose }) => {
-  const { services, employees, createAppointment, addToWaitlist } = useSalon();
+  const { services, employees, createAppointment, addToWaitlist, isBlockedClient } = useSalon();
 
   const [step, setStep] = useState<number>(1);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(initialService || services[0] || null);
@@ -29,10 +29,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
   const [selectedTime, setSelectedTime] = useState<string>('14:00');
   const [clientName, setClientName] = useState<string>('');
   const [clientPhone, setClientPhone] = useState<string>('');
+  const [clientCpf, setClientCpf] = useState<string>('');
   const [createdAppointmentId, setCreatedAppointmentId] = useState<string | null>(null);
   
-  // Fake stealth block check (will simulate block for any number with 99999)
-  const isBlocked = clientPhone.includes('999999999') || clientPhone.includes('000000000');
+  const isBlocked = isBlockedClient(clientPhone, clientCpf);
 
   // Time slots generator (09:00 to 19:00)
   const generateTimeSlots = () => {
@@ -59,17 +59,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
   const handleConfirmBooking = () => {
     if (!selectedService || !clientName || !clientPhone || !selectedDate || !selectedTime) return;
 
-    if (isBlocked) {
-      alert('Não há horários disponíveis no momento. Tente novamente mais tarde.');
-      onClose();
-      return;
-    }
+    if (isBlocked) return;
 
     const dataHoraIso = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
 
     const app = createAppointment({
       cliente_nome: clientName,
       cliente_phone: clientPhone,
+      cliente_cpf: clientCpf,
       data_hora: dataHoraIso,
       servico_id: selectedService.id,
       profissional_id: selectedEmployee ? selectedEmployee.id : employees[0]?.id || '',
@@ -78,11 +75,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
       metodo_pagamento: 'pendente'
     });
 
+    if (!app) return;
     setCreatedAppointmentId(app.id);
     setStep(4); // Success step
   };
 
   const handleJoinWaitlist = () => {
+    if (isBlocked) return;
     // Build waitlist entry without id (added in context)
     const entry = {
       cliente_nome: clientName,
@@ -224,6 +223,19 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
                 </div>
                 <p className="text-[10px] text-zinc-500 mt-1 pl-2">Informe seu número para vermos os horários.</p>
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">
+                  CPF (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={clientCpf}
+                  onChange={(e) => setClientCpf(e.target.value)}
+                  placeholder="Digite seu CPF"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500"
+                />
+              </div>
             </div>
 
             <div className="flex items-center space-x-3 pt-2">
@@ -267,7 +279,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
                 Horários Disponíveis (09:00 - 19:00)
               </label>
               
-              {timeSlots.length > 0 ? (
+              {isBlocked ? (
+                <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl text-center space-y-3">
+                  <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Nenhum horário disponível</h4>
+                    <p className="text-xs text-zinc-400">Desculpe, não temos horários disponíveis para o período selecionado. Por favor, entre em contato diretamente pelo nosso WhatsApp.</p>
+                  </div>
+                </div>
+              ) : timeSlots.length > 0 ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                   {timeSlots.map(time => (
                     <button

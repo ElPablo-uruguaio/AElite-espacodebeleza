@@ -45,6 +45,7 @@ interface SalonContextType {
   // New Actions for security & scheduling features
   addBlockedClient: (client: Omit<BlockedClient, 'id'>) => void;
   removeBlockedClient: (id: string) => void;
+  isBlockedClient: (phone?: string, cpf?: string) => boolean;
   addAbsence: (absence: Omit<AbsenceBlock, 'id'>) => void;
   removeAbsence: (id: string) => void;
   addToWaitlist: (entry: Omit<WaitlistEntry, 'id'>) => void;
@@ -59,7 +60,7 @@ interface SalonContextType {
   updateEmployee: (id: string, employee: Partial<Employee>) => void;
   deleteEmployee: (id: string) => void;
 
-  createAppointment: (appointmentData: Omit<Appointment, 'id' | 'created_at'>) => Appointment;
+  createAppointment: (appointmentData: Omit<Appointment, 'id' | 'created_at'>) => Appointment | null;
   updateAppointmentStatus: (id: string, status: AppointmentStatus) => void;
   checkoutAppointment: (id: string, metodoPagamento: string) => void;
 
@@ -443,7 +444,11 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setEmployees(prev => prev.filter(e => e.id !== id));
   };
 
-  const createAppointment = (data: Omit<Appointment, 'id' | 'created_at'>): Appointment => {
+  const createAppointment = (data: Omit<Appointment, 'id' | 'created_at'>): Appointment | null => {
+    if (isBlockedClient(data.cliente_phone, data.cliente_cpf)) {
+      return null;
+    }
+
     const newApp: Appointment = {
       ...data,
       id: 'app-' + Date.now(),
@@ -585,12 +590,28 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Security & Scheduling Actions
   const addBlockedClient = (client: Omit<BlockedClient, 'id'>) => {
+    const phone = client.cliente_phone.replace(/\D/g, '');
+    const cpf = client.cliente_cpf?.replace(/\D/g, '');
+    const alreadyBlocked = blockedClients.some(existing =>
+      (phone && existing.cliente_phone.replace(/\D/g, '') === phone) ||
+      (cpf && existing.cliente_cpf?.replace(/\D/g, '') === cpf)
+    );
+    if (alreadyBlocked) return;
+
     const newClient: BlockedClient = { ...client, id: `blk-${Date.now()}` };
     setBlockedClients(prev => [newClient, ...prev]);
     logSystemEvent('SEGURANCA', `Cliente bloqueado: ${client.cliente_nome}`, 'warn');
   };
   const removeBlockedClient = (id: string) => {
     setBlockedClients(prev => prev.filter(b => b.id !== id));
+  };
+  const isBlockedClient = (phone?: string, cpf?: string): boolean => {
+    const normalizedPhone = phone?.replace(/\D/g, '');
+    const normalizedCpf = cpf?.replace(/\D/g, '');
+    return blockedClients.some(client =>
+      (normalizedPhone && client.cliente_phone.replace(/\D/g, '') === normalizedPhone) ||
+      (normalizedCpf && client.cliente_cpf?.replace(/\D/g, '') === normalizedCpf)
+    );
   };
   const addAbsence = (absence: Omit<AbsenceBlock, 'id'>) => {
     const newAbsence: AbsenceBlock = { ...absence, id: `abs-${Date.now()}` };
@@ -776,6 +797,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateFichaTecnica,
         addBlockedClient,
         removeBlockedClient,
+        isBlockedClient,
         addAbsence,
         removeAbsence,
         addToWaitlist,

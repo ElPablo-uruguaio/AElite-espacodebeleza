@@ -64,6 +64,7 @@ export interface Appointment {
   id: string;
   cliente_nome: string;
   cliente_phone: string;
+  cliente_cpf?: string;
   data_hora: string; // ISO string
   servico_id: string;
   profissional_id: string;
@@ -206,6 +207,7 @@ export interface DevLogEntry {
 export interface BlockedClient {
   id: string;
   cliente_phone: string;
+  cliente_cpf?: string;
   cliente_nome: string;
   motivo?: string;
   created_at?: string;
