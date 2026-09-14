@@ -7,33 +7,69 @@ import { PromotionalLanding } from './pages/PromotionalLanding';
 
 export const App: React.FC = () => {
   const { role, isLoggedIn } = useAuth();
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [currentHash, setCurrentHash] = useState(window.location.hash);
 
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleLocationChange = () => {
+      setCurrentPath(window.location.pathname);
       setCurrentHash(window.location.hash);
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
   }, []);
 
-  // Check if hash matches a promotional landing page (e.g. #promocao-dia-das-maes)
+  // Check if hash matches a promotional landing page (e.g. #promocao-dia-das-maes or #lp-...)
   const isPromoHash = currentHash.startsWith('#promocao-') || currentHash.startsWith('#lp-');
-
-  if (isLoggedIn) {
-    if (role === 'dev_admin') {
-      return <DevMasterDashboard />;
-    }
-    if (role === 'admin') {
-      return <GestoraDashboard />;
-    }
-  }
-
   if (isPromoHash) {
     const slug = currentHash.replace('#', '').split('?')[0];
     return <PromotionalLanding slug={slug} />;
   }
 
+  // Admin / Gestora routes (/admin, /gestora, #/admin, #/gestora, #admin, #gestora)
+  const isAdminRoute =
+    currentPath === '/admin' ||
+    currentPath === '/gestora' ||
+    currentHash === '#/admin' ||
+    currentHash === '#/gestora' ||
+    currentHash === '#admin' ||
+    currentHash === '#gestora';
+
+  // Dev Master route (/dev, #/dev, #dev)
+  const isDevRoute =
+    currentPath === '/dev' ||
+    currentHash === '#/dev' ||
+    currentHash === '#dev';
+
+  // If on admin or dev routes, render appropriate dashboard
+  if (isAdminRoute) {
+    if (isLoggedIn && role === 'dev_admin') {
+      return <DevMasterDashboard />;
+    }
+    return <GestoraDashboard />;
+  }
+
+  if (isDevRoute) {
+    return <DevMasterDashboard />;
+  }
+
+  // If user is logged in, allow them to view dashboard if they requested or automatically
+  if (isLoggedIn) {
+    if (role === 'dev_admin') {
+      return <DevMasterDashboard />;
+    }
+    if (role === 'admin' && (currentPath === '/admin' || currentPath === '/gestora' || currentHash === '#admin' || currentHash === '#gestora')) {
+      return <GestoraDashboard />;
+    }
+  }
+
+  // Default route: Public Landing Page for clients
   return <PublicHome />;
 };
 

@@ -56,11 +56,11 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Agendamentos e Sinal PIX */}
+        {/* Atendimento & Pagamento */}
         <div className="space-y-3">
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider">Sinal & Agendamento</h4>
+          <h4 className="text-sm font-bold text-white uppercase tracking-wider">Pagamento & Atendimento</h4>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Para garantir seu horário exclusivo, os agendamentos online solicitam um sinal simbólico de R$ 20,00 via PIX, totalmente abatido no valor final.
+            Agende seu horário online sem cobrança de sinal prévio. Aceitamos PIX, cartões de crédito/débito e dinheiro no momento da finalização do atendimento no salão.
           </p>
           <div className="bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-[11px] text-amber-400 font-mono">
             Chave PIX: {settings.chave_pix}

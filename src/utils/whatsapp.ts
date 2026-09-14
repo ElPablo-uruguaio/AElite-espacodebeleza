@@ -40,7 +40,7 @@ export function createWhatsAppConfirmationLink({
   nomeSalao = 'Espaço Beleza VIP'
 }: WhatsAppMessageParams): string {
   const cleanPhone = formatPhoneForWhatsApp(phone);
-  const text = `Olá, *${clienteNome}*! 🎉\n\nSeu agendamento no *${nomeSalao}* foi *CONFIRMADO* com sucesso!\n\n📅 *Data/Horário:* ${dataHoraStr}\n💇‍♀️ *Serviço:* ${servicoNome}\n👤 *Profissional:* ${profissionalNome}\n\nSua vaga e sinal via PIX já foram validados. Até breve! ✨`;
+  const text = `Olá, *${clienteNome}*! 🎉\n\nSeu agendamento no *${nomeSalao}* foi *CONFIRMADO* com sucesso!\n\n📅 *Data/Horário:* ${dataHoraStr}\n💇‍♀️ *Serviço:* ${servicoNome}\n👤 *Profissional:* ${profissionalNome}\n\nSua vaga está garantida. Te aguardamos com muito carinho! ✨`;
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
 }
 

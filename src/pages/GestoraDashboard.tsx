@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSalon } from '../context/SalonContext';
+import { useAuth } from '../context/AuthContext';
 import { DashboardStats } from '../components/gestora/DashboardStats';
 import { AgendaCalendar } from '../components/gestora/AgendaCalendar';
 import { PayrollManager } from '../components/gestora/PayrollManager';
@@ -11,14 +12,25 @@ import { CMSManager } from '../components/gestora/CMSManager';
 import { StockManager } from '../components/gestora/StockManager';
 import { AbsenceManager } from '../components/gestora/AbsenceManager';
 import { StealthBlockManager } from '../components/gestora/StealthBlockManager';
+import { MediaManager } from '../components/gestora/MediaManager';
 import { PDVCheckout } from '../components/client/PDVCheckout';
-import { CalendarClock, ShieldAlert, Package, FileText, Calendar, Users, MessageSquare, Bell, Target, QrCode, Settings, Scissors, Home, LogOut, Sparkles } from 'lucide-react';
+import { CalendarClock, ShieldAlert, Package, FileText, Calendar, Users, MessageSquare, Bell, Target, QrCode, Settings, Scissors, Home, LogOut, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 export const GestoraDashboard: React.FC = () => {
 
-  const [activeTab, setActiveTab] = useState<'agenda' | 'payroll' | 'cms' | 'reviews' | 'notifications' | 'qrcode' | 'landing_pages' | 'estoque' | 'fichas' | 'ausencias' | 'stealth'>('agenda');
+  const [activeTab, setActiveTab] = useState<'agenda' | 'payroll' | 'cms' | 'reviews' | 'notifications' | 'qrcode' | 'landing_pages' | 'estoque' | 'fichas' | 'midias' | 'ausencias' | 'stealth'>('agenda');
   const [selectedPDVAppointment, setSelectedPDVAppointment] = useState<any>(null);
   const { settings } = useSalon();
+  const { user, logout } = useAuth();
+
+  const handleGoToPublicHome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (window.location.pathname !== '/' && window.location.pathname !== '') {
+      window.history.pushState({}, '', '/');
+    }
+    window.location.hash = '';
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6 lg:p-8">
@@ -34,20 +46,27 @@ export const GestoraDashboard: React.FC = () => {
               Painel Operacional da Gestora
             </h1>
             <p className="text-xs text-amber-400 font-medium flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" /> {settings.nome_salao}
+              <Sparkles className="w-3.5 h-3.5" /> {settings.nome_salao} • Bem-vinda, {user?.full_name || 'Gestora'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-3">
           <a
-            href="#"
+            href="/"
+            onClick={handleGoToPublicHome}
             className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2.5 rounded-xl border border-zinc-700 flex items-center gap-1.5 transition"
           >
             <Home className="w-4 h-4 text-rose-400" />
             <span>Ver Site Público</span>
           </a>
-          {/* Removed logout button as user context not available */}
+          <button
+            onClick={logout}
+            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2.5 rounded-xl border border-zinc-700 flex items-center gap-1.5 transition"
+          >
+            <LogOut className="w-4 h-4 text-rose-400" />
+            <span>Sair</span>
+          </button>
         </div>
       </header>
 
@@ -133,6 +152,18 @@ export const GestoraDashboard: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab('midias')}
+            className={`p-4 rounded-2xl font-bold text-xs flex flex-col items-center justify-center space-y-2 border transition shadow ${
+              activeTab === 'midias'
+                ? 'bg-rose-600 text-white border-rose-500 shadow-rose-600/30'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+            }`}
+          >
+            <ImageIcon className="w-6 h-6" />
+            <span>Mídias / Stories</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('cms')}
             className={`p-4 rounded-2xl font-bold text-xs flex flex-col items-center justify-center space-y-2 border transition shadow ${
               activeTab === 'cms'
@@ -182,6 +213,7 @@ export const GestoraDashboard: React.FC = () => {
         {activeTab === 'notifications' && <NotificationsManager />}
         {activeTab === 'landing_pages' && <LandingPageManager />}
         {activeTab === 'qrcode' && <QRCodeManager />}
+        {activeTab === 'midias' && <MediaManager />}
         {activeTab === 'cms' && <CMSManager />}
         {activeTab === 'estoque' && <StockManager />}
         {activeTab === 'fichas' && (

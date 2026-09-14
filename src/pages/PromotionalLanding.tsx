@@ -83,10 +83,9 @@ export const PromotionalLanding: React.FC<PromotionalLandingProps> = ({ slug }) 
               <span className="text-2xl font-extrabold text-emerald-400">R$ {campaign.preco_promocional.toFixed(2)}</span>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-amber-400 font-bold border-t border-zinc-800 pt-2">
-              <span>Garantia de Reserva via PIX:</span>
-              <span>R$ {campaign.valor_sinal_pix.toFixed(2)}</span>
-            </div>
+            <p className="text-[11px] text-zinc-400 text-left border-t border-zinc-800 pt-2">
+              Reserva imediata sem cobrança de sinal prévio. Pagamento realizado diretamente no salão.
+            </p>
 
             <button
               onClick={() => setShowBooking(true)}
@@ -99,7 +98,7 @@ export const PromotionalLanding: React.FC<PromotionalLandingProps> = ({ slug }) 
           </div>
 
           <p className="text-[11px] text-zinc-400 flex items-center justify-center gap-1 pt-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 inline" /> Sinal de R$ 20,00 100% Abatido no Valor Final
+            <ShieldCheck className="w-4 h-4 text-emerald-400 inline" /> Agendamento 100% Gratuito Sem Sinal
           </p>
         </div>
       </div>

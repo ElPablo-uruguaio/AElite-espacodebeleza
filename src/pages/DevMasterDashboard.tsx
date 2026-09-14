@@ -22,15 +22,23 @@ export const DevMasterDashboard: React.FC = () => {
 
         <div className="flex items-center space-x-3">
           <a
-            href="#"
-            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2 rounded-xl border border-zinc-700 flex items-center gap-1"
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              if (window.location.pathname !== '/' && window.location.pathname !== '') {
+                window.history.pushState({}, '', '/');
+              }
+              window.location.hash = '';
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }}
+            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2 rounded-xl border border-zinc-700 flex items-center gap-1 transition"
           >
             <Home className="w-4 h-4 text-amber-400" />
-            <span>Ver Site</span>
+            <span>Ver Site Público</span>
           </a>
           <button
             onClick={logout}
-            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2 rounded-xl border border-zinc-700 flex items-center gap-1"
+            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2 rounded-xl border border-zinc-700 flex items-center gap-1 transition"
           >
             <LogOut className="w-4 h-4 text-rose-400" />
             <span>Sair Dev</span>

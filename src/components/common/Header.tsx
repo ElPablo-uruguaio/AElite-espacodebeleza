@@ -26,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenDelayModal 
         if (success) {
           setShowLoginModal(false);
           setInputPassword('');
+          window.location.hash = '#/admin';
         } else {
           setErrorMessage('Senha incorreta para a Gestora. Tente "admin123".');
         }
@@ -35,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenDelayModal 
       if (success) {
         setShowLoginModal(false);
         setInputPassword('');
+        window.location.hash = '#/dev';
       } else {
         setErrorMessage('Chave Dev Master inválida. Tente "devmaster2026".');
       }
@@ -100,13 +102,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenDelayModal 
             {/* Role switch / Auth trigger */}
             {isLoggedIn ? (
               <div className="flex items-center space-x-2 border-l border-zinc-800 pl-3">
-                <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 capitalize">
-                  {role === 'dev_admin' ? 'Dev Master' : 'Gestora'}
-                </span>
+                <a
+                  href={role === 'dev_admin' ? '#/dev' : '#/admin'}
+                  className="text-xs px-2.5 py-1 rounded-full font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 capitalize hover:bg-rose-500/30 transition"
+                  title="Ir para o Painel"
+                >
+                  {role === 'dev_admin' ? 'Painel Dev' : 'Painel Gestora'}
+                </a>
                 <button
                   onClick={logout}
                   className="p-2 text-zinc-400 hover:text-rose-400 rounded-xl hover:bg-zinc-800 transition"
-                  title="Sair do Painel"
+                  title="Sair da Sessão"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>

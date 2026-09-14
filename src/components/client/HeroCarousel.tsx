@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, ArrowRight, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Sparkles, Calendar, ArrowRight, ShieldCheck, Upload, Image } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface HeroCarouselProps {
   onOpenBooking: () => void;
 }
 
 export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onOpenBooking }) => {
-  const { settings } = useSalon();
+  const { settings, updateSettings } = useSalon();
+  const { isLoggedIn, role } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const bannerFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const isGestora = isLoggedIn && (role === 'admin' || role === 'dev_admin');
 
   const banners = settings.banner_urls.length > 0
     ? settings.banner_urls
@@ -21,6 +26,22 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onOpenBooking }) => 
     }, 5000);
     return () => clearInterval(interval);
   }, [banners.length]);
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      if (result) {
+        const newBanners = [...banners];
+        newBanners[currentSlide] = result;
+        updateSettings({ banner_urls: newBanners });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <section className="relative min-h-[520px] sm:min-h-[580px] flex items-center justify-center overflow-hidden bg-zinc-950">
@@ -40,6 +61,27 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onOpenBooking }) => 
         </div>
       ))}
 
+      {/* Quick Gestora Banner Change Button */}
+      {isGestora && (
+        <div className="absolute top-4 right-4 z-30">
+          <input
+            type="file"
+            ref={bannerFileInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={handleBannerUpload}
+          />
+          <button
+            onClick={() => bannerFileInputRef.current?.click()}
+            className="bg-black/70 hover:bg-rose-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl backdrop-blur-md border border-white/20 flex items-center gap-1.5 shadow-lg transition"
+            title="Alterar foto do banner atual"
+          >
+            <Upload className="w-4 h-4 text-rose-400 hover:text-white" />
+            <span>Trocar Imagem do Banner</span>
+          </button>
+        </div>
+      )}
+
       {/* Content Overlay */}
       <div className="relative z-10 max-w-4xl mx-auto text-center px-4 sm:px-6 py-16">
         <div className="inline-flex items-center space-x-2 bg-zinc-900/90 border border-amber-500/30 px-4 py-1.5 rounded-full mb-6 shadow-xl backdrop-blur-md">
@@ -54,7 +96,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onOpenBooking }) => 
         </h1>
 
         <p className="text-zinc-300 text-sm sm:text-lg max-w-2xl mx-auto mb-8 leading-relaxed font-light">
-          Agendamento online simples e em tempo real. Garanta seu horário com apenas R$ 20,00 de sinal via PIX e transforme seu visual.
+          Agendamento online simples, rápido e em tempo real. Escolha o serviço, selecione seu profissional favorito e transforme seu visual.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -78,7 +120,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onOpenBooking }) => 
         {/* Guarantee badge */}
         <div className="mt-8 flex items-center justify-center space-x-4 text-xs text-zinc-400 font-medium">
           <span className="flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 inline" /> Sinal PIX 100% Garantido
+            <ShieldCheck className="w-4 h-4 text-emerald-400 inline" /> Agendamento 100% Gratuito Sem Sinal
           </span>
           <span>•</span>
           <span>Confirmação Instantânea</span>

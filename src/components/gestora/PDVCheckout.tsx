@@ -18,7 +18,7 @@ export const PDVCheckout: React.FC<PDVCheckoutProps> = ({ appointment, onClose }
   const profissional = employees.find(e => e.id === appointment.profissional_id);
 
   const valorTotal = appointment.valor_total;
-  const valorSinal = appointment.valor_sinal || 20.00;
+  const valorSinal = appointment.valor_sinal || 0;
   const saldoAReceber = Math.max(0, valorTotal - valorSinal);
 
   // Stock items linked to this service
@@ -129,15 +129,17 @@ export const PDVCheckout: React.FC<PDVCheckoutProps> = ({ appointment, onClose }
                 <span className="font-bold text-white">R$ {valorTotal.toFixed(2)}</span>
               </div>
 
-              <div className="flex justify-between text-sm text-emerald-400 font-semibold bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20">
-                <span className="flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 inline" /> Abatimento do Sinal PIX:
-                </span>
-                <span>- R$ {valorSinal.toFixed(2)}</span>
-              </div>
+              {valorSinal > 0 && (
+                <div className="flex justify-between text-sm text-emerald-400 font-semibold bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20">
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 inline" /> Abatimento do Sinal:
+                  </span>
+                  <span>- R$ {valorSinal.toFixed(2)}</span>
+                </div>
+              )}
 
               <div className="border-t border-zinc-800 pt-3 flex justify-between text-lg font-extrabold text-amber-400">
-                <span>Saldo Restante a Receber:</span>
+                <span>Total a Cobrar:</span>
                 <span>R$ {saldoAReceber.toFixed(2)}</span>
               </div>
             </div>

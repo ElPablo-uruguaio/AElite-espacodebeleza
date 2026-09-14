@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Clock, Sparkles, Calendar, CheckCircle2 } from 'lucide-react';
+import { Clock, Calendar, Sparkles, Upload } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
+import { useAuth } from '../../context/AuthContext';
 import { ServiceItem } from '../../types';
 
 interface ServiceCatalogProps {
@@ -8,8 +9,11 @@ interface ServiceCatalogProps {
 }
 
 export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService }) => {
-  const { services } = useSalon();
+  const { services, updateService } = useSalon();
+  const { isLoggedIn, role } = useAuth();
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
+
+  const isGestora = isLoggedIn && (role === 'admin' || role === 'dev_admin');
 
   const categories = ['Todos', ...Array.from(new Set(services.map(s => s.categoria)))];
   const activeServices = services.filter(s => s.ativo);
@@ -32,7 +36,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
             Nossos Serviços & Especialidades
           </h2>
           <p className="text-zinc-400 text-sm mt-2 font-light">
-            Escolha o tratamento desejado e agende seu horário online com apenas R$ 20,00 de sinal via PIX.
+            Escolha o tratamento desejado e faça seu agendamento online de forma rápida e prática. Pagamento realizado no salão após o atendimento.
           </p>
         </div>
 
@@ -73,6 +77,38 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
                   <span className="absolute top-3 left-3 bg-zinc-950/80 backdrop-blur-md text-amber-400 text-[11px] font-bold px-3 py-1 rounded-full border border-amber-500/20">
                     {service.categoria}
                   </span>
+
+                  {/* Gestora Quick Photo Replacement Button */}
+                  {isGestora && (
+                    <div className="absolute top-3 right-3">
+                      <input
+                        type="file"
+                        id={`catalog-srv-upload-${service.id}`}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              const res = ev.target?.result as string;
+                              if (res) updateService(service.id, { foto_url: res });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById(`catalog-srv-upload-${service.id}`)?.click()}
+                        className="bg-black/80 hover:bg-rose-600 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-xl border border-white/20 flex items-center gap-1 shadow transition backdrop-blur-md"
+                        title="Trocar Foto deste Serviço"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-rose-400 hover:text-white" />
+                        <span>Trocar Foto</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Body Content */}

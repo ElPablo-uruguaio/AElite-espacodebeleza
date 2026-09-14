@@ -13,8 +13,6 @@ export const DashboardStats: React.FC = () => {
 
   const upcomingApp = todayApps.find(a => a.status === 'confirmado' || a.status === 'aguardando_confirmacao');
 
-  const totalSinaisHoje = todayApps.filter(a => a.sinal_pago || a.status !== 'cancelado').length * 20.00;
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
       
@@ -71,13 +69,13 @@ export const DashboardStats: React.FC = () => {
         </p>
       </div>
 
-      {/* Card 4: Sinais Garantidos via PIX */}
+      {/* Card 4: Total Atendimentos Confirmados */}
       <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl relative overflow-hidden shadow-xl group hover:border-emerald-500/40 transition">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Sinais PIX do Dia</p>
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Confirmados Hoje</p>
             <h3 className="text-3xl font-extrabold text-emerald-400 mt-1">
-              R$ {totalSinaisHoje.toFixed(2).replace('.', ',')}
+              {todayApps.filter(a => a.status === 'confirmado' || a.status === 'concluido' || a.status === 'em_atendimento').length}
             </h3>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
@@ -85,7 +83,7 @@ export const DashboardStats: React.FC = () => {
           </div>
         </div>
         <p className="text-[11px] text-zinc-400 mt-3 font-medium">
-          Garantia de R$ 20,00 por cliente
+          Clientes agendados para hoje
         </p>
       </div>
 
