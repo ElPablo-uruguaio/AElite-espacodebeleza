@@ -8,6 +8,30 @@
   }
 }
 
+@layer components {
+  .admin-panel input:not([type='file']),
+  .admin-panel select,
+  .admin-panel textarea {
+    @apply bg-zinc-800 text-white border border-zinc-700;
+  }
+
+  .admin-panel input:not([type='file'])::placeholder,
+  .admin-panel textarea::placeholder {
+    @apply text-zinc-500;
+  }
+
+  .admin-panel input:not([type='file']):focus,
+  .admin-panel select:focus,
+  .admin-panel textarea:focus {
+    @apply border-rose-500 outline-none;
+  }
+
+  .admin-panel input[type='date'],
+  .admin-panel input[type='month'] {
+    color-scheme: dark;
+  }
+}
+
 /* Custom Glassmorphism & Aesthetics */
 .glass-panel {
   background: rgba(24, 24, 27, 0.75);

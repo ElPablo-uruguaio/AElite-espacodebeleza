@@ -36,7 +36,7 @@ export const GestoraDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6 lg:p-8">
+    <div className="admin-panel min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6 lg:p-8">
       
       {/* Top Manager Header */}
       <header className="max-w-7xl mx-auto bg-zinc-900 border border-zinc-800 p-6 rounded-3xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
