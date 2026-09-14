@@ -125,6 +125,23 @@ export interface PushNotificationRecord {
   target_count: number;
 }
 
+export type AppointmentReminderKind = '24h' | '2h';
+export type AppointmentReminderStatus = 'pendente' | 'enviado' | 'cancelado';
+
+export interface AppointmentReminder {
+  id: string;
+  appointment_id: string;
+  tipo: AppointmentReminderKind;
+  status: AppointmentReminderStatus;
+  cliente_nome: string;
+  cliente_phone: string;
+  servico_nome: string;
+  data_hora_agendamento: string;
+  data_hora_lembrete: string;
+  created_at: string;
+  enviado_em?: string;
+}
+
 export type MessageType = 'recado' | 'atraso' | 'sugestao';
 
 export interface ClientMessage {

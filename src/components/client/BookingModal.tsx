@@ -20,7 +20,7 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onClose }) => {
-  const { services, employees, createAppointment, addToWaitlist, isBlockedClient } = useSalon();
+  const { services, employees, createAppointment, addToWaitlist, isBlockedClient, scheduleAppointmentReminders } = useSalon();
 
   const [step, setStep] = useState<number>(1);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(initialService || services[0] || null);
@@ -76,6 +76,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
     });
 
     if (!app) return;
+    scheduleAppointmentReminders(app, selectedService.nome);
     setCreatedAppointmentId(app.id);
     setStep(4); // Success step
   };

@@ -7,6 +7,7 @@ import {
   PayrollRecord,
   StoryMedia,
   PushNotificationRecord,
+  AppointmentReminder,
   ClientMessage,
   ClientReview,
   LandingPageCampaign,
@@ -30,6 +31,7 @@ interface SalonContextType {
   payroll: PayrollRecord[];
   stories: StoryMedia[];
   notifications: PushNotificationRecord[];
+  appointmentReminders: AppointmentReminder[];
   messages: ClientMessage[];
   reviews: ClientReview[];
   landingPages: LandingPageCampaign[];
@@ -68,6 +70,8 @@ interface SalonContextType {
   deleteStory: (id: string) => void;
 
   sendPushNotification: (titulo: string, mensagem: string) => Promise<void>;
+  scheduleAppointmentReminders: (appointment: Appointment, servicoNome: string) => void;
+  processPendingReminders: () => Promise<number>;
   
   addClientMessage: (message: Omit<ClientMessage, 'id' | 'created_at' | 'lida'>) => void;
   markMessageRead: (id: string) => void;
@@ -339,6 +343,11 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return n ? JSON.parse(n) : [];
   });
 
+  const [appointmentReminders, setAppointmentReminders] = useState<AppointmentReminder[]>(() => {
+    const reminders = localStorage.getItem('salon_appointment_reminders');
+    return reminders ? JSON.parse(reminders) : [];
+  });
+
   const [messages, setMessages] = useState<ClientMessage[]>(() => {
     const m = localStorage.getItem('salon_messages');
     return m ? JSON.parse(m) : [];
@@ -399,6 +408,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('salon_payroll', JSON.stringify(payroll)); }, [payroll]);
   useEffect(() => { localStorage.setItem('salon_stories', JSON.stringify(stories)); }, [stories]);
   useEffect(() => { localStorage.setItem('salon_notifications', JSON.stringify(notifications)); }, [notifications]);
+  useEffect(() => { localStorage.setItem('salon_appointment_reminders', JSON.stringify(appointmentReminders)); }, [appointmentReminders]);
   useEffect(() => { localStorage.setItem('salon_messages', JSON.stringify(messages)); }, [messages]);
   useEffect(() => { localStorage.setItem('salon_reviews', JSON.stringify(reviews)); }, [reviews]);
   useEffect(() => { localStorage.setItem('salon_landing_pages', JSON.stringify(landingPages)); }, [landingPages]);
@@ -520,6 +530,62 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
     setNotifications(prev => [newRecord, ...prev]);
   };
+
+  const scheduleAppointmentReminders = (appointment: Appointment, servicoNome: string) => {
+    const appointmentTime = new Date(appointment.data_hora).getTime();
+    const createdAt = new Date().toISOString();
+    const reminders: AppointmentReminder[] = [
+      { hours: 24, tipo: '24h' as const },
+      { hours: 2, tipo: '2h' as const }
+    ].map(({ hours, tipo }) => ({
+      id: `rem-${appointment.id}-${tipo}`,
+      appointment_id: appointment.id,
+      tipo,
+      status: 'pendente',
+      cliente_nome: appointment.cliente_nome,
+      cliente_phone: appointment.cliente_phone,
+      servico_nome: servicoNome,
+      data_hora_agendamento: appointment.data_hora,
+      data_hora_lembrete: new Date(appointmentTime - hours * 60 * 60 * 1000).toISOString(),
+      created_at: createdAt
+    }));
+
+    setAppointmentReminders(prev => [
+      ...prev.filter(reminder => reminder.appointment_id !== appointment.id),
+      ...reminders
+    ]);
+  };
+
+  const processPendingReminders = async (): Promise<number> => {
+    const now = Date.now();
+    const dueReminders = appointmentReminders.filter(reminder => {
+      const dueAt = new Date(reminder.data_hora_lembrete).getTime();
+      const appointmentAt = new Date(reminder.data_hora_agendamento).getTime();
+      return reminder.status === 'pendente' && now >= dueAt && now < appointmentAt;
+    });
+
+    if (dueReminders.length === 0) return 0;
+
+    await Promise.all(dueReminders.map(reminder => sendLocalPushNotification(
+      `Lembrete de agendamento (${reminder.tipo})`,
+      `${reminder.cliente_nome}: ${reminder.servico_nome} está marcado para ${new Date(reminder.data_hora_agendamento).toLocaleString()}.`
+    )));
+
+    const sentAt = new Date().toISOString();
+    setAppointmentReminders(prev => prev.map(reminder =>
+      dueReminders.some(due => due.id === reminder.id)
+        ? { ...reminder, status: 'enviado', enviado_em: sentAt }
+        : reminder
+    ));
+    logSystemEvent('LEMBRETES', `${dueReminders.length} lembrete(s) de agendamento processado(s).`, 'info');
+    return dueReminders.length;
+  };
+
+  useEffect(() => {
+    void processPendingReminders();
+    const intervalId = window.setInterval(() => { void processPendingReminders(); }, 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [appointmentReminders]);
 
   const addClientMessage = (messageData: Omit<ClientMessage, 'id' | 'created_at' | 'lida'>) => {
     const newMsg: ClientMessage = {
@@ -753,6 +819,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         payroll,
         stories,
         notifications,
+        appointmentReminders,
         messages,
         reviews,
         landingPages,
@@ -776,6 +843,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addStory,
         deleteStory,
         sendPushNotification,
+        scheduleAppointmentReminders,
+        processPendingReminders,
         addClientMessage,
         markMessageRead,
         addClientReview,
