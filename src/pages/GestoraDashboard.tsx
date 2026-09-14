@@ -199,6 +199,18 @@ export const GestoraDashboard: React.FC = () => {
             <span>Fichas Técnicas</span>
           </button>
 
+          <button
+            onClick={() => setActiveTab('stealth')}
+            className={`p-4 rounded-2xl font-bold text-xs flex flex-col items-center justify-center space-y-2 border transition shadow ${
+              activeTab === 'stealth'
+                ? 'bg-rose-600 text-white border-rose-500 shadow-rose-600/30'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+            }`}
+          >
+            <ShieldAlert className="w-6 h-6" />
+            <span>Bloqueio Silencioso</span>
+          </button>
+
         </div>
       </div>
 
@@ -216,6 +228,7 @@ export const GestoraDashboard: React.FC = () => {
         {activeTab === 'midias' && <MediaManager />}
         {activeTab === 'cms' && <CMSManager />}
         {activeTab === 'estoque' && <StockManager />}
+        {activeTab === 'stealth' && <StealthBlockManager />}
         {activeTab === 'fichas' && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-xl text-center">
             <FileText className="w-12 h-12 text-purple-400 mx-auto mb-4" />
