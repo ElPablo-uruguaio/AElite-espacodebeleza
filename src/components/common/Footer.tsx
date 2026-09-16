@@ -1,5 +1,5 @@
 import React from 'react';
-import { Scissors, MapPin, Phone, Instagram, Clock, Heart } from 'lucide-react';
+import { Scissors, MapPin, Phone, Instagram, Clock } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 
 export const Footer: React.FC = () => {
@@ -71,8 +71,8 @@ export const Footer: React.FC = () => {
 
       <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-zinc-900 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500">
         <p>© {new Date().getFullYear()} {settings.nome_salao}. Todos os direitos reservados.</p>
-        <p className="flex items-center gap-1 mt-2 sm:mt-0">
-          Desenvolvido com <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" /> por Antigravity AI
+        <p className="text-xs text-gray-500 mt-2 sm:mt-0">
+          Desenvolvido por Paulo Martinez ❤️
         </p>
       </div>
     </footer>
