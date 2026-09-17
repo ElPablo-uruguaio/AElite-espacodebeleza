@@ -26,15 +26,13 @@ export async function sendLocalPushNotification(title: string, body: string, url
     const reg = await navigator.serviceWorker.ready;
     reg.showNotification(title, {
       body,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
       data: { url }
     });
     logSystemEvent('PUSH', `Notificação enviada: "${title}"`, 'info');
   } else {
     // Fallback using Notification API directly
     if (Notification.permission === 'granted') {
-      new Notification(title, { body, icon: '/icons/icon-192.png' });
+      new Notification(title, { body });
     }
   }
 }

@@ -102,7 +102,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginAsDevAdmin = (masterKey: string): boolean => {
-    if (masterKey === 'devmaster2026' || masterKey === 'master') {
+    const storedDevPassword = localStorage.getItem('dev_admin_password') || 'devmaster2026';
+    if (masterKey === storedDevPassword || masterKey === 'master') {
       const devUser: UserProfile = {
         id: 'dev-001',
         email: 'devmaster@antigravity.ai',

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Terminal, Download, Database, ShieldAlert, CheckCircle2, RefreshCw, FileCode, Layers, Lock } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 import { downloadJSONBackup, downloadCSVBackup } from '../../services/backup';
-import { isSupabaseConfigured, supabase } from '../../services/supabase';
+import { isSupabaseConfigured, logSystemEvent } from '../../services/supabase';
 
 export const DevMasterView: React.FC = () => {
   const {
@@ -58,7 +58,7 @@ export const DevMasterView: React.FC = () => {
     downloadJSONBackup(fullBackup, `salao_beleza_full_backup_${new Date().toISOString().slice(0, 10)}.json`);
   };
 
-  const handlePasswordUpdate = async (event: React.FormEvent) => {
+  const handlePasswordUpdate = (event: React.FormEvent) => {
     event.preventDefault();
     setPasswordMessage(null);
 
@@ -67,18 +67,9 @@ export const DevMasterView: React.FC = () => {
       return;
     }
 
-    if (!supabase) {
-      setPasswordMessage({ text: 'O serviço de autenticação não está configurado.', type: 'error' });
-      return;
-    }
-
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) {
-      setPasswordMessage({ text: error.message || 'Não foi possível alterar a senha.', type: 'error' });
-      return;
-    }
-
-    setPasswordMessage({ text: 'Senha alterada com sucesso.', type: 'success' });
+    localStorage.setItem('dev_admin_password', newPassword);
+    logSystemEvent('AUTH', 'Senha do Dev Admin alterada com sucesso.', 'success');
+    setPasswordMessage({ text: 'Senha alterada com sucesso!', type: 'success' });
     setNewPassword('');
     setConfirmPassword('');
   };
@@ -155,7 +146,7 @@ export const DevMasterView: React.FC = () => {
             type="submit"
             className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow"
           >
-            Salvar Senha
+            Atualizar Minha Senha
           </button>
         </form>
       </section>

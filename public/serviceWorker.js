@@ -47,8 +47,6 @@ self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : { title: 'Espaço Beleza VIP', body: 'Nova promoção disponível para você!' };
   const options = {
     body: data.body,
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
