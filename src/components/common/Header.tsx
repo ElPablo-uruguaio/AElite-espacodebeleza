@@ -28,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenDelayModal 
           setInputPassword('');
           window.location.hash = '#/admin';
         } else {
-          setErrorMessage('Senha incorreta para a Gestora. Tente "admin123".');
+          setErrorMessage('Senha incorreta para a Gestora.');
         }
       });
     } else {
@@ -177,7 +177,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenDelayModal 
                   type="password"
                   value={inputPassword}
                   onChange={(e) => setInputPassword(e.target.value)}
-                  placeholder={loginType === 'gestora' ? 'Digite a senha (padrão: admin123)' : 'Digite a chave (devmaster2026)'}
+                  placeholder={loginType === 'gestora' ? 'Digite a senha' : 'Digite a chave de acesso'}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500"
                   required
                 />
@@ -198,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenDelayModal 
             </form>
 
             <div className="mt-4 pt-4 border-t border-zinc-800 text-center text-xs text-zinc-500">
-              Dica de demonstração: Gestora: <code className="text-amber-400">admin123</code> | Dev: <code className="text-amber-400">devmaster2026</code>
+              Dica de demonstração disponível apenas para ambientes autorizados.
             </div>
           </div>
         </div>
