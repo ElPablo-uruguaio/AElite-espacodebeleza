@@ -18,6 +18,12 @@ export const PWAInstallBanner: React.FC = () => {
 
     window.addEventListener('beforeinstallprompt', handler);
 
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+      setIsVisible(false);
+    };
+    window.addEventListener('appinstalled', handleAppInstalled);
+
     // Fallback detection for iOS devices
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -29,7 +35,10 @@ export const PWAInstallBanner: React.FC = () => {
       }
     }
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
   const handleInstall = async () => {

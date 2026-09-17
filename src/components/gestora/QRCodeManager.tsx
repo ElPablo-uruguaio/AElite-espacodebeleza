@@ -4,7 +4,7 @@ import { useSalon } from '../../context/SalonContext';
 
 export const QRCodeManager: React.FC = () => {
   const { settings } = useSalon();
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://espacobelezavip.com.br';
+  const currentOrigin = window.location.origin;
 
   const handlePrint = () => {
     window.print();

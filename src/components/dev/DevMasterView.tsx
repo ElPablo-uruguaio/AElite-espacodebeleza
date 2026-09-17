@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Download, Database, ShieldAlert, CheckCircle2, RefreshCw, FileCode, Layers } from 'lucide-react';
+import { Terminal, Download, Database, ShieldAlert, CheckCircle2, RefreshCw, FileCode, Layers, Lock } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 import { downloadJSONBackup, downloadCSVBackup } from '../../services/backup';
-import { isSupabaseConfigured } from '../../services/supabase';
+import { isSupabaseConfigured, supabase } from '../../services/supabase';
 
 export const DevMasterView: React.FC = () => {
   const {
@@ -23,6 +23,9 @@ export const DevMasterView: React.FC = () => {
   } = useSalon();
   
   const [logs, setLogs] = useState<any[]>([]);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const loadLogs = () => {
     const l = JSON.parse(localStorage.getItem('dev_system_logs') || '[]');
@@ -55,6 +58,31 @@ export const DevMasterView: React.FC = () => {
     downloadJSONBackup(fullBackup, `salao_beleza_full_backup_${new Date().toISOString().slice(0, 10)}.json`);
   };
 
+  const handlePasswordUpdate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setPasswordMessage(null);
+
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ text: 'As senhas não coincidem.', type: 'error' });
+      return;
+    }
+
+    if (!supabase) {
+      setPasswordMessage({ text: 'O serviço de autenticação não está configurado.', type: 'error' });
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setPasswordMessage({ text: error.message || 'Não foi possível alterar a senha.', type: 'error' });
+      return;
+    }
+
+    setPasswordMessage({ text: 'Senha alterada com sucesso.', type: 'success' });
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       
@@ -83,6 +111,54 @@ export const DevMasterView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Security */}
+      <section className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl space-y-4 shadow-xl">
+        <div>
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <Lock className="w-5 h-5 text-amber-400" />
+            Segurança
+          </h3>
+          <p className="text-xs text-zinc-400 mt-1">Altere a senha da conta atual.</p>
+        </div>
+
+        <form onSubmit={handlePasswordUpdate} className="max-w-md space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">Nova Senha</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">Confirmar Senha</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+              required
+            />
+          </div>
+
+          {passwordMessage && (
+            <p className={`text-xs font-bold p-3 rounded-xl border ${passwordMessage.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
+              {passwordMessage.text}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow"
+          >
+            Salvar Senha
+          </button>
+        </form>
+      </section>
 
       {/* Supabase Connection Status Card */}
       <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl space-y-4 shadow-xl">

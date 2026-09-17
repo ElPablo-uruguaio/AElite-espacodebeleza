@@ -10,10 +10,10 @@ interface ServiceCatalogProps {
 
 export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService }) => {
   const { services, updateService } = useSalon();
-  const { isLoggedIn, role } = useAuth();
+  const { user } = useAuth();
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
 
-  const isGestora = isLoggedIn && (role === 'admin' || role === 'dev_admin');
+  const isAdmin = user?.role === 'admin';
 
   const categories = ['Todos', ...Array.from(new Set(services.map(s => s.categoria)))];
   const activeServices = services.filter(s => s.ativo);
@@ -79,7 +79,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
                   </span>
 
                   {/* Gestora Quick Photo Replacement Button */}
-                  {isGestora && (
+                  {isAdmin && (
                     <div className="absolute top-3 right-3">
                       <input
                         type="file"

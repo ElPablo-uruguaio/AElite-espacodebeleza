@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Settings, Plus, Trash2, Edit3, Image, Film, Key, CheckCircle2, Lock, Scissors, Sparkles, Star, Upload } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
-import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../services/supabase';
 
 export const CMSManager: React.FC = () => {
   const { settings, updateSettings, services, addService, updateService, deleteService, stories, addStory, deleteStory } = useSalon();
-  const { changePassword } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'settings' | 'services' | 'stories' | 'password'>('settings');
 
@@ -34,8 +33,8 @@ export const CMSManager: React.FC = () => {
   const [stAudioUrl, setStAudioUrl] = useState('');
 
   // Password change state
-  const [currPass, setCurrPass] = useState('');
   const [newPass, setNewPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
   const [passMsg, setPassMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const handleSaveSettings = (e: React.FormEvent) => {
@@ -89,17 +88,28 @@ export const CMSManager: React.FC = () => {
     setStAudioUrl('');
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPassMsg(null);
-    const success = changePassword(currPass, newPass);
-    if (success) {
-      setPassMsg({ text: 'Senha alterada com sucesso!', type: 'success' });
-      setCurrPass('');
-      setNewPass('');
-    } else {
-      setPassMsg({ text: 'Senha atual incorreta.', type: 'error' });
+    if (newPass !== confirmPass) {
+      setPassMsg({ text: 'As senhas não coincidem.', type: 'error' });
+      return;
     }
+
+    if (!supabase) {
+      setPassMsg({ text: 'O serviço de autenticação não está configurado.', type: 'error' });
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPass });
+    if (error) {
+      setPassMsg({ text: error.message || 'Não foi possível alterar a senha.', type: 'error' });
+      return;
+    }
+
+    setPassMsg({ text: 'Senha alterada com sucesso!', type: 'success' });
+    setNewPass('');
+    setConfirmPass('');
   };
 
   return (
@@ -527,19 +537,8 @@ export const CMSManager: React.FC = () => {
       {activeTab === 'password' && (
         <form onSubmit={handleChangePassword} className="space-y-4 max-w-md bg-zinc-950 border border-zinc-800 p-6 rounded-2xl">
           <h4 className="text-sm font-bold text-white flex items-center gap-1 mb-2">
-            <Lock className="w-4 h-4 text-amber-400" /> Alterar Senha de Acesso da Gestora
+            <Lock className="w-4 h-4 text-amber-400" /> Alterar Senha
           </h4>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-300 mb-1">Senha Atual *</label>
-            <input
-              type="password"
-              value={currPass}
-              onChange={(e) => setCurrPass(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white"
-              required
-            />
-          </div>
 
           <div>
             <label className="block text-xs font-semibold text-zinc-300 mb-1">Nova Senha *</label>
@@ -547,6 +546,17 @@ export const CMSManager: React.FC = () => {
               type="password"
               value={newPass}
               onChange={(e) => setNewPass(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">Confirmar Senha *</label>
+            <input
+              type="password"
+              value={confirmPass}
+              onChange={(e) => setConfirmPass(e.target.value)}
               className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white"
               required
             />

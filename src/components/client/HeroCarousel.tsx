@@ -9,11 +9,11 @@ interface HeroCarouselProps {
 
 export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onOpenBooking }) => {
   const { settings, updateSettings } = useSalon();
-  const { isLoggedIn, role } = useAuth();
+  const { user } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const bannerFileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const isGestora = isLoggedIn && (role === 'admin' || role === 'dev_admin');
+  const isAdmin = user?.role === 'admin';
 
   const banners = settings.banner_urls.length > 0
     ? settings.banner_urls
@@ -62,7 +62,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onOpenBooking }) => 
       ))}
 
       {/* Quick Gestora Banner Change Button */}
-      {isGestora && (
+      {isAdmin && (
         <div className="absolute top-4 right-4 z-30">
           <input
             type="file"
