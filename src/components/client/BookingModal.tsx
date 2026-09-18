@@ -12,7 +12,7 @@ import {
   Scissors
 } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
-import { ServiceItem, Employee } from '../../types';
+import { Appointment, ServiceItem, Employee } from '../../types';
 
 interface BookingModalProps {
   initialService?: ServiceItem | null;
@@ -20,7 +20,7 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onClose }) => {
-  const { services, employees, createAppointment, addToWaitlist, isBlockedClient, scheduleAppointmentReminders, upsertClient } = useSalon();
+  const { services, employees, createAppointment, hasAppointmentConflict, addToWaitlist, isBlockedClient, scheduleAppointmentReminders, upsertClient } = useSalon();
 
   const [step, setStep] = useState<number>(1);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(initialService || services[0] || null);
@@ -64,7 +64,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
 
     const dataHoraIso = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
 
-    const app = createAppointment({
+    const appointmentData: Omit<Appointment, 'id' | 'created_at'> = {
       cliente_nome: clientName,
       cliente_phone: clientPhone,
       cliente_cpf: clientCpf,
@@ -75,7 +75,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
       status: 'aguardando_confirmacao',
       valor_total: selectedService.preco,
       metodo_pagamento: 'pendente'
-    });
+    };
+
+    if (hasAppointmentConflict(appointmentData)) {
+      alert('Horário já ocupado para este profissional!');
+      return;
+    }
+
+    const app = createAppointment(appointmentData);
 
     if (!app) return;
     upsertClient({ nome: clientName, cpf: clientCpf, telefone: clientPhone, data_nascimento: clientBirthDate });

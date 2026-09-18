@@ -73,6 +73,7 @@ interface SalonContextType {
   deleteEmployee: (id: string) => void;
 
   createAppointment: (appointmentData: Omit<Appointment, 'id' | 'created_at'>) => Appointment | null;
+  hasAppointmentConflict: (appointmentData: Omit<Appointment, 'id' | 'created_at'>) => boolean;
   upsertClient: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => Client;
   importClients: (clients: Array<Omit<Client, 'id' | 'created_at' | 'updated_at'>>) => number;
   checkBirthdayClients: () => Client[];
@@ -497,8 +498,33 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setEmployees(prev => prev.filter(e => e.id !== id));
   };
 
+  const hasAppointmentConflict = (data: Omit<Appointment, 'id' | 'created_at'>): boolean => {
+    const newService = services.find(service => service.id === data.servico_id);
+    const newStart = new Date(data.data_hora).getTime();
+    const newEnd = newStart + (newService?.duracao || 60) * 60 * 1000;
+
+    return appointments.some(existingAppointment => {
+      if (
+        existingAppointment.status === 'cancelado' ||
+        existingAppointment.profissional_id !== data.profissional_id
+      ) {
+        return false;
+      }
+
+      const existingService = services.find(service => service.id === existingAppointment.servico_id);
+      const existingStart = new Date(existingAppointment.data_hora).getTime();
+      const existingEnd = existingStart + (existingService?.duracao || 60) * 60 * 1000;
+
+      return newStart < existingEnd && newEnd > existingStart;
+    });
+  };
+
   const createAppointment = (data: Omit<Appointment, 'id' | 'created_at'>): Appointment | null => {
     if (isBlockedClient(data.cliente_phone, data.cliente_cpf)) {
+      return null;
+    }
+
+    if (hasAppointmentConflict(data)) {
       return null;
     }
 
@@ -1008,6 +1034,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateEmployee,
         deleteEmployee,
         createAppointment,
+        hasAppointmentConflict,
         upsertClient,
         importClients,
         checkBirthdayClients,
