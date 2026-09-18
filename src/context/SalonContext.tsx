@@ -26,7 +26,7 @@ import {
   ,PayrollSummary
   ,RecurringDiscountFrequency
 } from '../types';
-import { logSystemEvent } from '../services/supabase';
+import { isSupabaseConfigured, logSystemEvent, supabase } from '../services/supabase';
 import { sendLocalPushNotification } from '../services/push';
 
 interface SalonContextType {
@@ -77,7 +77,7 @@ interface SalonContextType {
   importClients: (clients: Array<Omit<Client, 'id' | 'created_at' | 'updated_at'>>) => number;
   checkBirthdayClients: () => Client[];
   updateAppointmentStatus: (id: string, status: AppointmentStatus) => void;
-  checkoutAppointment: (id: string, metodoPagamento: string) => void;
+  checkoutAppointment: (id: string, metodoPagamento: string) => Promise<void>;
 
   addStory: (story: Omit<StoryMedia, 'id' | 'publicado_em'>) => void;
   deleteStory: (id: string) => void;
@@ -568,9 +568,18 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     logSystemEvent('AGENDA', `Horário do agendamento ${id} atualizado.`, 'info');
   };
 
-  const checkoutAppointment = (id: string, metodoPagamento: string) => {
+  const checkoutAppointment = async (id: string, metodoPagamento: string) => {
     const app = appointments.find(a => a.id === id);
     if (!app) return;
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: 'concluido', metodo_pagamento: metodoPagamento })
+        .eq('id', id);
+
+      if (error) throw error;
+    }
 
     // 1. Mark appointment as completed
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'concluido', metodo_pagamento: metodoPagamento } : a));

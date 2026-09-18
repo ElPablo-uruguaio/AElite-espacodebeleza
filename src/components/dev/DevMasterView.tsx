@@ -2,24 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Terminal, Download, Database, ShieldAlert, CheckCircle2, RefreshCw, FileCode, Layers, Lock } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 import { downloadJSONBackup, downloadCSVBackup } from '../../services/backup';
-import { isSupabaseConfigured, logSystemEvent } from '../../services/supabase';
+import { isSupabaseConfigured, logSystemEvent, supabase } from '../../services/supabase';
 
 export const DevMasterView: React.FC = () => {
   const {
-    services,
-    employees,
-    appointments,
-    payroll,
-    stories,
-    notifications,
-    messages,
-    reviews,
-    landingPages,
+    services = [],
+    employees = [],
+    appointments = [],
+    payroll = [],
+    stories = [],
+    notifications = [],
+    messages = [],
+    reviews = [],
+    landingPages = [],
     settings,
-    fichasTecnicas,
-    estoque,
-    servicoProdutos,
-    cartoesFidelidade
+    fichasTecnicas = [],
+    estoque = [],
+    servicoProdutos = [],
+    cartoesFidelidade = []
   } = useSalon();
   
   const [logs, setLogs] = useState<any[]>([]);
@@ -28,8 +28,13 @@ export const DevMasterView: React.FC = () => {
   const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const loadLogs = () => {
-    const l = JSON.parse(localStorage.getItem('dev_system_logs') || '[]');
-    setLogs(l);
+    try {
+      const storedLogs = localStorage.getItem('dev_system_logs');
+      const parsedLogs = storedLogs ? JSON.parse(storedLogs) : [];
+      setLogs(Array.isArray(parsedLogs) ? parsedLogs : []);
+    } catch {
+      setLogs([]);
+    }
   };
 
   useEffect(() => {
@@ -58,20 +63,38 @@ export const DevMasterView: React.FC = () => {
     downloadJSONBackup(fullBackup, `salao_beleza_full_backup_${new Date().toISOString().slice(0, 10)}.json`);
   };
 
-  const handlePasswordUpdate = (event: React.FormEvent) => {
+  const handleUpdatePassword = async (event: React.FormEvent) => {
     event.preventDefault();
-    setPasswordMessage(null);
 
     if (newPassword !== confirmPassword) {
       setPasswordMessage({ text: 'As senhas não coincidem.', type: 'error' });
       return;
     }
 
-    localStorage.setItem('dev_admin_password', newPassword);
-    logSystemEvent('AUTH', 'Senha do Dev Admin alterada com sucesso.', 'success');
-    setPasswordMessage({ text: 'Senha alterada com sucesso!', type: 'success' });
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      if (!supabase) {
+        throw new Error('Supabase não configurado.');
+      }
+
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ id: 1, password: newPassword });
+
+      if (error) throw error;
+
+      localStorage.setItem('admin_password', newPassword);
+      logSystemEvent('AUTH', 'Senha do Dev Admin alterada com sucesso.', 'success');
+      setPasswordMessage({ text: 'Senha atualizada com sucesso!', type: 'success' });
+      alert('Senha atualizada com sucesso!');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch {
+      localStorage.setItem('admin_password', newPassword);
+      setPasswordMessage({ text: 'Senha atualizada com sucesso no navegador!', type: 'success' });
+      alert('Senha atualizada com sucesso no navegador!');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
   };
 
   return (
@@ -113,7 +136,7 @@ export const DevMasterView: React.FC = () => {
           <p className="text-xs text-zinc-400 mt-1">Altere a senha da conta atual.</p>
         </div>
 
-        <form onSubmit={handlePasswordUpdate} className="max-w-md space-y-4">
+        <form onSubmit={handleUpdatePassword} className="max-w-md space-y-4">
           <div>
             <label className="block text-xs font-semibold text-zinc-300 mb-1">Nova Senha</label>
             <input

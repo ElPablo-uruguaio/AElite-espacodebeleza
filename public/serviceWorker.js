@@ -1,4 +1,4 @@
-const CACHE_NAME = 'beleza-vip-cache-v1';
+const CACHE_NAME = 'beleza-vip-cache-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -30,15 +30,23 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Cache with network fallback
+// Prefer the current deployment so hashed bundles do not become stale.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request).catch(() => {
-        return caches.match('/');
-      });
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok && event.request.url.startsWith(self.location.origin)) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        if (event.request.mode === 'navigate') return caches.match('/');
+        return Response.error();
+      }))
   );
 });
 
