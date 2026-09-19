@@ -86,7 +86,7 @@ export const VisagismoModal: React.FC<VisagismoModalProps> = ({ onClose, cliente
           <div>
             <h2 className="text-lg font-bold text-white">Análise de Visagismo</h2>
             <p className="text-xs text-zinc-400">
-              {clienteNome ? `Recomendação personalizada para ${clienteNome}` : 'Recomendações para o eLite Espaço de Beleza'}
+              {clienteNome ? `Recomendação personalizada para ${clienteNome}` : 'Recomendações para o Elite Espaço de Beleza'}
             </p>
           </div>
         </div>

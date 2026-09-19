@@ -20,7 +20,7 @@ export const analisarVisagismo = async (base64: string, mimeType: string): Promi
   const model = genAI.getGenerativeModel({ model: modelName });
 
   const prompt = `
-Você é um consultor especialista em visagismo do salão eLite Espaço de Beleza.
+Você é um consultor especialista em visagismo do salão Elite Espaço de Beleza.
 Analise a imagem enviada com cuidado e produza uma recomendação profissional, acolhedora e prática em português do Brasil.
 
 Organize a resposta nestas seções:
@@ -31,7 +31,7 @@ Organize a resposta nestas seções:
 5. Cuidados e perguntas que o profissional deve confirmar antes de executar o serviço.
 
 Não faça diagnósticos médicos, não presuma informações que não estejam visíveis e deixe claro que a recomendação final deve ser confirmada por um profissional presencialmente.
-A análise deve ser específica para o atendimento no eLite Espaço de Beleza.
+A análise deve ser específica para o atendimento no Elite Espaço de Beleza.
 `.trim();
 
   const result = await model.generateContent([
