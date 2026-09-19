@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const modelName = (import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash').trim();
 
 /**
  * Analisa uma imagem para orientar recomendações personalizadas de visagismo.
@@ -16,7 +17,7 @@ export const analisarVisagismo = async (base64: string, mimeType: string): Promi
 
   const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+  const model = genAI.getGenerativeModel({ model: modelName });
 
   const prompt = `
 Você é um consultor especialista em visagismo do salão eLite Espaço de Beleza.
