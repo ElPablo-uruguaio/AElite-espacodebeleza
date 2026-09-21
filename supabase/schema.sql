@@ -222,6 +222,30 @@ CREATE TABLE IF NOT EXISTS public.fila_espera (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 20. LANÇAMENTOS FINANCEIROS
+CREATE TABLE IF NOT EXISTS public.categorias_despesas (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  nome TEXT NOT NULL UNIQUE,
+  tipo TEXT CHECK (tipo IN ('ENTRADA', 'SAIDA')) DEFAULT 'SAIDA',
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.transacoes (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  tipo TEXT NOT NULL CHECK (tipo IN ('ENTRADA', 'SAIDA')),
+  descricao TEXT NOT NULL,
+  valor DECIMAL(10,2) NOT NULL,
+  categoria TEXT NOT NULL,
+  fornecedor TEXT,
+  data_pagamento DATE DEFAULT CURRENT_DATE NOT NULL,
+  status TEXT CHECK (status IN ('PAGO', 'PENDENTE')) DEFAULT 'PAGO' NOT NULL,
+  profissional_id UUID,
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS transacoes_data_pagamento_idx ON public.transacoes (data_pagamento);
+CREATE INDEX IF NOT EXISTS transacoes_tipo_idx ON public.transacoes (tipo);
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -243,6 +267,8 @@ ALTER TABLE public.cartao_fidelidade ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clientes_bloqueados ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ausencias_bloqueios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fila_espera ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categorias_despesas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transacoes ENABLE ROW LEVEL SECURITY;
 
 -- Public READ for active services, employees, approved reviews, site settings, active stories, active LPs, cartao_fidelidade, and ausencias
 CREATE POLICY "Public Read Services" ON public.services FOR SELECT USING (ativo = TRUE);
@@ -278,6 +304,21 @@ CREATE POLICY "Manager All Cartao Fidelidade" ON public.cartao_fidelidade FOR AL
 CREATE POLICY "Manager All Clientes Bloqueados" ON public.clientes_bloqueados FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Ausencias" ON public.ausencias_bloqueios FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Fila Espera" ON public.fila_espera FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Permitir tudo para autenticados em categorias" ON public.categorias_despesas FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Permitir tudo para autenticados em transacoes" ON public.transacoes FOR ALL USING (auth.role() = 'authenticated');
+
+INSERT INTO public.categorias_despesas (nome, tipo) VALUES
+  ('Serviços Prestados', 'ENTRADA'),
+  ('Venda de Produtos', 'ENTRADA'),
+  ('Água / Luz / Gás', 'SAIDA'),
+  ('Internet / Telefone', 'SAIDA'),
+  ('Produtos / Insumos', 'SAIDA'),
+  ('Alimentação / Bebedouro', 'SAIDA'),
+  ('Fornecedores', 'SAIDA'),
+  ('Comissão de Funcionário', 'SAIDA'),
+  ('Aluguel / Manutenção', 'SAIDA'),
+  ('Outras Despesas', 'SAIDA')
+ON CONFLICT (nome) DO NOTHING;
 
 -- ==============================================================================
 -- INITIAL SEED DATA FOR DEMO / FIRST RUN
