@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Settings, Plus, Trash2, Edit3, Image, Film, Key, CheckCircle2, Lock, Scissors, Sparkles, Star, Upload } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
-import { supabase } from '../../services/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 export const CMSManager: React.FC = () => {
   const { settings, updateSettings, services, addService, updateService, deleteService, stories, addStory, deleteStory } = useSalon();
+  const { changePassword } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'settings' | 'services' | 'stories' | 'password'>('settings');
 
@@ -33,6 +34,7 @@ export const CMSManager: React.FC = () => {
   const [stAudioUrl, setStAudioUrl] = useState('');
 
   // Password change state
+  const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
   const [passMsg, setPassMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -88,7 +90,7 @@ export const CMSManager: React.FC = () => {
     setStAudioUrl('');
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
     setPassMsg(null);
     if (newPass !== confirmPass) {
@@ -96,18 +98,13 @@ export const CMSManager: React.FC = () => {
       return;
     }
 
-    if (!supabase) {
-      setPassMsg({ text: 'O serviço de autenticação não está configurado.', type: 'error' });
-      return;
-    }
-
-    const { error } = await supabase.auth.updateUser({ password: newPass });
-    if (error) {
-      setPassMsg({ text: error.message || 'Não foi possível alterar a senha.', type: 'error' });
+    if (!changePassword(currentPass, newPass)) {
+      setPassMsg({ text: 'A senha atual está incorreta.', type: 'error' });
       return;
     }
 
     setPassMsg({ text: 'Senha alterada com sucesso!', type: 'success' });
+    setCurrentPass('');
     setNewPass('');
     setConfirmPass('');
   };
@@ -539,6 +536,17 @@ export const CMSManager: React.FC = () => {
           <h4 className="text-sm font-bold text-white flex items-center gap-1 mb-2">
             <Lock className="w-4 h-4 text-amber-400" /> Alterar Senha
           </h4>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">Senha Atual *</label>
+            <input
+              type="password"
+              value={currentPass}
+              onChange={(e) => setCurrentPass(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white"
+              required
+            />
+          </div>
 
           <div>
             <label className="block text-xs font-semibold text-zinc-300 mb-1">Nova Senha *</label>

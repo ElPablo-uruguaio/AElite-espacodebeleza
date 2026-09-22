@@ -84,14 +84,14 @@ export const DevMasterView: React.FC = () => {
 
       if (error) throw error;
 
-      localStorage.setItem('admin_password', newPassword);
+      localStorage.setItem('dev_admin_password', newPassword);
       logSystemEvent('AUTH', 'Senha do Dev Admin alterada com sucesso.', 'success');
       setPasswordMessage({ text: 'Senha atualizada com sucesso!', type: 'success' });
       alert('Senha atualizada com sucesso!');
       setNewPassword('');
       setConfirmPassword('');
     } catch {
-      localStorage.setItem('admin_password', newPassword);
+      localStorage.setItem('dev_admin_password', newPassword);
       setPasswordMessage({ text: 'Senha atualizada com sucesso no navegador!', type: 'success' });
       alert('Senha atualizada com sucesso no navegador!');
       setNewPassword('');
