@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Calendar as CalendarIcon,
@@ -20,7 +20,7 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onClose }) => {
-  const { services, employees, createAppointment, hasAppointmentConflict, addToWaitlist, isBlockedClient, scheduleAppointmentReminders, upsertClient } = useSalon();
+  const { services, employees, employeeServiceIds, createAppointment, hasAppointmentConflict, addToWaitlist, isBlockedClient, scheduleAppointmentReminders, upsertClient } = useSalon();
 
   const [step, setStep] = useState<number>(1);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(initialService || services[0] || null);
@@ -32,6 +32,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
   const [clientCpf, setClientCpf] = useState<string>('');
   const [clientBirthDate, setClientBirthDate] = useState<string>('');
   const [createdAppointmentId, setCreatedAppointmentId] = useState<string | null>(null);
+  const eligibleEmployees = employees.filter(employee => employee.ativo && selectedService && employeeServiceIds[employee.id]?.includes(selectedService.id));
+
+  useEffect(() => {
+    if (!eligibleEmployees.some(employee => employee.id === selectedEmployee?.id)) {
+      setSelectedEmployee(eligibleEmployees[0] || null);
+    }
+  }, [selectedService, employees, employeeServiceIds]);
   
   const isBlocked = isBlockedClient(clientPhone, clientCpf);
 
@@ -160,8 +167,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
               <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
                 2. Escolha o Profissional
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {employees.filter(e => e.ativo).map(emp => (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {eligibleEmployees.map(emp => (
                   <button
                     key={emp.id}
                     onClick={() => setSelectedEmployee(emp)}
@@ -183,11 +190,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
                   </button>
                 ))}
               </div>
+              {eligibleEmployees.length === 0 && (
+                <p className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+                  Nenhum profissional está configurado para realizar este serviço. Escolha outro serviço ou fale com o salão.
+                </p>
+              )}
             </div>
 
             <button
               onClick={() => setStep(2)}
-              disabled={!selectedService}
+              disabled={!selectedService || !selectedEmployee}
               className="w-full rose-gradient-btn text-white font-bold py-3.5 rounded-2xl flex items-center justify-center space-x-2 shadow-lg disabled:opacity-50"
             >
               <span>Continuar</span>

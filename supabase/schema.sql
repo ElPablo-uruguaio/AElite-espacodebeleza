@@ -57,6 +57,17 @@ CREATE TABLE IF NOT EXISTS public.employees (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 5.1 EMPLOYEE SERVICES (services each professional is qualified to perform)
+CREATE TABLE IF NOT EXISTS public.profissional_servico (
+  profissional_id UUID NOT NULL REFERENCES public.employees(id) ON DELETE CASCADE,
+  servico_id UUID NOT NULL REFERENCES public.services(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (profissional_id, servico_id)
+);
+
+CREATE INDEX IF NOT EXISTS profissional_servico_servico_idx
+  ON public.profissional_servico (servico_id);
+
 -- 6. APPOINTMENTS TABLE
 CREATE TABLE IF NOT EXISTS public.appointments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -253,6 +264,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profissional_servico ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payroll ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.stories ENABLE ROW LEVEL SECURITY;
@@ -273,6 +285,10 @@ ALTER TABLE public.transacoes ENABLE ROW LEVEL SECURITY;
 -- Public READ for active services, employees, approved reviews, site settings, active stories, active LPs, cartao_fidelidade, and ausencias
 CREATE POLICY "Public Read Services" ON public.services FOR SELECT USING (ativo = TRUE);
 CREATE POLICY "Public Read Employees" ON public.employees FOR SELECT USING (ativo = TRUE);
+CREATE POLICY "Public Read Active Employee Services" ON public.profissional_servico FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.employees e WHERE e.id = profissional_id AND e.ativo = TRUE)
+  AND EXISTS (SELECT 1 FROM public.services s WHERE s.id = servico_id AND s.ativo = TRUE)
+);
 CREATE POLICY "Public Read Approved Reviews" ON public.reviews FOR SELECT USING (aprovado_para_site = TRUE);
 CREATE POLICY "Public Read Site Settings" ON public.site_settings FOR SELECT USING (TRUE);
 CREATE POLICY "Public Read Stories" ON public.stories FOR SELECT USING (ativo = TRUE);
@@ -289,6 +305,7 @@ CREATE POLICY "Public Insert Fila Espera" ON public.fila_espera FOR INSERT WITH 
 -- Manager & Dev Admin ALL Access
 CREATE POLICY "Manager All Services" ON public.services FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Employees" ON public.employees FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Manager All Employee Services" ON public.profissional_servico FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Appointments" ON public.appointments FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Payroll" ON public.payroll FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Stories" ON public.stories FOR ALL USING (auth.role() = 'authenticated');

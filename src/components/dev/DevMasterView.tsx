@@ -9,6 +9,7 @@ export const DevMasterView: React.FC = () => {
     services = [],
     employees = [],
     appointments = [],
+    clients = [],
     payroll = [],
     stories = [],
     notifications = [],
@@ -49,6 +50,7 @@ export const DevMasterView: React.FC = () => {
       services,
       employees,
       appointments,
+      clients,
       payroll,
       stories,
       notifications,
@@ -82,14 +84,14 @@ export const DevMasterView: React.FC = () => {
 
       if (error) throw error;
 
-      localStorage.setItem('admin_password', newPassword);
+      localStorage.setItem('dev_admin_password', newPassword);
       logSystemEvent('AUTH', 'Senha do Dev Admin alterada com sucesso.', 'success');
       setPasswordMessage({ text: 'Senha atualizada com sucesso!', type: 'success' });
       alert('Senha atualizada com sucesso!');
       setNewPassword('');
       setConfirmPassword('');
     } catch {
-      localStorage.setItem('admin_password', newPassword);
+      localStorage.setItem('dev_admin_password', newPassword);
       setPasswordMessage({ text: 'Senha atualizada com sucesso no navegador!', type: 'success' });
       alert('Senha atualizada com sucesso no navegador!');
       setNewPassword('');
@@ -227,6 +229,14 @@ export const DevMasterView: React.FC = () => {
             className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 p-3 rounded-2xl text-left transition text-xs font-semibold text-zinc-200 flex items-center justify-between"
           >
             <span>Appointments ({appointments.length})</span>
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+          </button>
+
+          <button
+            onClick={() => downloadCSVBackup(clients, 'clients')}
+            className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 p-3 rounded-2xl text-left transition text-xs font-semibold text-zinc-200 flex items-center justify-between"
+          >
+            <span>Clientes ({clients.length})</span>
             <Download className="w-3.5 h-3.5 text-emerald-400" />
           </button>
 
