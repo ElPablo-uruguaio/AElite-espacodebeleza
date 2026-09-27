@@ -201,6 +201,7 @@ export const AgendaCalendar: React.FC<AgendaCalendarProps> = ({ onOpenPDV }) => 
           onClose={() => setSelectedAnamnese(null)}
         />
       )}
+
     </div>
   );
 };

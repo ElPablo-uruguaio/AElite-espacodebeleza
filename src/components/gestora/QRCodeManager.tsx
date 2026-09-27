@@ -4,7 +4,7 @@ import { useSalon } from '../../context/SalonContext';
 
 export const QRCodeManager: React.FC = () => {
   const { settings } = useSalon();
-  const currentOrigin = window.location.origin;
+  const currentOrigin = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SITE_URL) || 'https://salao-de-beleza.vercel.app';
 
   const handlePrint = () => {
     window.print();

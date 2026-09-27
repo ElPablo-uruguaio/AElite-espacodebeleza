@@ -17,11 +17,12 @@ import { TeamPermissionsManager } from '../components/gestora/TeamPermissionsMan
 import { ClientManager } from '../components/gestora/ClientManager';
 import { MediaManager } from '../components/gestora/MediaManager';
 import { PDVCheckout } from '../components/client/PDVCheckout';
-import { CalendarClock, ShieldAlert, Package, FileText, Calendar, Users, MessageSquare, Bell, Target, QrCode, Settings, Scissors, Home, LogOut, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { FinancialDashboard } from '../components/gestora/FinancialDashboard';
+import { CalendarClock, ShieldAlert, Package, FileText, Calendar, Users, MessageSquare, Bell, Target, QrCode, Settings, Scissors, Home, LogOut, Sparkles, Image as ImageIcon, WalletCards } from 'lucide-react';
 
 export const GestoraDashboard: React.FC = () => {
 
-  const [activeTab, setActiveTab] = useState<'agenda' | 'payroll' | 'cms' | 'reviews' | 'notifications' | 'reminders' | 'clients' | 'qrcode' | 'landing_pages' | 'estoque' | 'fichas' | 'midias' | 'ausencias' | 'stealth' | 'permissions'>('agenda');
+  const [activeTab, setActiveTab] = useState<'agenda' | 'financeiro' | 'payroll' | 'cms' | 'reviews' | 'notifications' | 'reminders' | 'clients' | 'qrcode' | 'landing_pages' | 'estoque' | 'fichas' | 'midias' | 'ausencias' | 'stealth' | 'permissions'>('agenda');
   const [selectedPDVAppointment, setSelectedPDVAppointment] = useState<any>(null);
   const { settings } = useSalon();
   const { user, logout } = useAuth();
@@ -104,6 +105,18 @@ export const GestoraDashboard: React.FC = () => {
           >
             <Users className="w-6 h-6" />
             <span>Folha/Comissões</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('financeiro')}
+            className={`p-4 rounded-2xl font-bold text-xs flex flex-col items-center justify-center space-y-2 border transition shadow ${
+              activeTab === 'financeiro'
+                ? 'bg-rose-600 text-white border-rose-500 shadow-rose-600/30'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+            }`}
+          >
+            <WalletCards className="w-6 h-6" />
+            <span>Financeiro</span>
           </button>
 
           <button
@@ -260,6 +273,7 @@ export const GestoraDashboard: React.FC = () => {
         )}
 
         {activeTab === 'payroll' && <PayrollManager />}
+        {activeTab === 'financeiro' && <FinancialDashboard />}
         {activeTab === 'reviews' && <ReviewsModeration />}
         {activeTab === 'notifications' && <NotificationsManager />}
         {activeTab === 'reminders' && <AppointmentRemindersManager />}

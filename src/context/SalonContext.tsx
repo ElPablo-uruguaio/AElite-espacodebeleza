@@ -33,6 +33,7 @@ interface SalonContextType {
   settings: SiteSettings;
   services: ServiceItem[];
   employees: Employee[];
+  employeeServiceIds: Record<string, string[]>;
   appointments: Appointment[];
   clients: Client[];
   payroll: PayrollRecord[];
@@ -70,6 +71,7 @@ interface SalonContextType {
   
   addEmployee: (employee: Omit<Employee, 'id'>) => void;
   updateEmployee: (id: string, employee: Partial<Employee>) => void;
+  updateEmployeeServices: (employeeId: string, serviceIds: string[]) => void;
   deleteEmployee: (id: string) => void;
 
   createAppointment: (appointmentData: Omit<Appointment, 'id' | 'created_at'>) => Appointment | null;
@@ -325,6 +327,17 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return e ? JSON.parse(e) : DEFAULT_EMPLOYEES;
   });
 
+  const [employeeServiceIds, setEmployeeServiceIds] = useState<Record<string, string[]>>(() => {
+    const stored = localStorage.getItem('salon_employee_services');
+    if (stored) return JSON.parse(stored);
+
+    const serviceIds = services.map(service => service.id);
+    return employees.reduce<Record<string, string[]>>((assignments, employee) => {
+      assignments[employee.id] = serviceIds;
+      return assignments;
+    }, {});
+  });
+
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     const a = localStorage.getItem('salon_appointments');
     if (a) return JSON.parse(a);
@@ -444,6 +457,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('salon_settings', JSON.stringify(settings)); }, [settings]);
   useEffect(() => { localStorage.setItem('salon_services', JSON.stringify(services)); }, [services]);
   useEffect(() => { localStorage.setItem('salon_employees', JSON.stringify(employees)); }, [employees]);
+  useEffect(() => { localStorage.setItem('salon_employee_services', JSON.stringify(employeeServiceIds)); }, [employeeServiceIds]);
   useEffect(() => { localStorage.setItem('salon_appointments', JSON.stringify(appointments)); }, [appointments]);
   useEffect(() => { localStorage.setItem('salon_clients', JSON.stringify(clients)); }, [clients]);
   useEffect(() => { localStorage.setItem('salon_payroll', JSON.stringify(payroll)); }, [payroll]);
@@ -492,6 +506,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateEmployee = (id: string, employeeData: Partial<Employee>) => {
     setEmployees(prev => prev.map(e => e.id === id ? { ...e, ...employeeData } : e));
+  };
+
+  const updateEmployeeServices = (employeeId: string, serviceIds: string[]) => {
+    setEmployeeServiceIds(prev => ({ ...prev, [employeeId]: serviceIds }));
   };
 
   const deleteEmployee = (id: string) => {
@@ -1007,6 +1025,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         settings,
         services,
         employees,
+        employeeServiceIds,
         appointments,
         clients,
         payroll,
@@ -1032,6 +1051,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         deleteService,
         addEmployee,
         updateEmployee,
+        updateEmployeeServices,
         deleteEmployee,
         createAppointment,
         hasAppointmentConflict,
