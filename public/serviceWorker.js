@@ -1,4 +1,4 @@
-const CACHE_NAME = 'beleza-vip-cache-v2';
+const CACHE_NAME = 'beleza-vip-cache-v3';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -8,26 +8,27 @@ const urlsToCache = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
+    Promise.all([
+      caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)),
+      self.skipWaiting()
+    ])
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    Promise.all([
+      caches.keys().then((cacheNames) => Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
+          return undefined;
         })
-      );
-    })
+      )),
+      self.clients.claim()
+    ])
   );
-  self.clients.claim();
 });
 
 // Prefer the current deployment so hashed bundles do not become stale.

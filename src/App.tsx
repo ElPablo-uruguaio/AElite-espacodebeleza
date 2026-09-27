@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './context/AuthContext';
 import { PublicHome } from './pages/PublicHome';
 import { GestoraDashboard } from './pages/GestoraDashboard';
@@ -10,6 +10,63 @@ export const App: React.FC = () => {
   const { role, isLoggedIn } = useAuth();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [currentHash, setCurrentHash] = useState(window.location.hash);
+  const promptedWorkerRef = useRef<ServiceWorker | null>(null);
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    let isMounted = true;
+
+    const checkForUpdate = async () => {
+      const registration = await navigator.serviceWorker.ready;
+
+      if (!isMounted) return;
+
+      const promptForUpdate = (worker: ServiceWorker) => {
+        if (
+          !navigator.serviceWorker.controller ||
+          promptedWorkerRef.current === worker
+        ) {
+          return;
+        }
+
+        promptedWorkerRef.current = worker;
+        if (window.confirm('Uma nova versão do sistema está disponível. Deseja recarregar agora para atualizar?')) {
+          window.location.reload();
+        }
+      };
+
+      const handleUpdateFound = () => {
+        const installingWorker = registration.installing;
+        if (!installingWorker) return;
+
+        installingWorker.addEventListener('statechange', () => {
+          if (installingWorker.state === 'installed') {
+            promptForUpdate(installingWorker);
+          }
+        });
+      };
+
+      registration.addEventListener('updatefound', handleUpdateFound);
+      await registration.update();
+
+      if (registration.waiting) {
+        promptForUpdate(registration.waiting);
+      }
+
+      return () => registration.removeEventListener('updatefound', handleUpdateFound);
+    };
+
+    let removeUpdateListener: (() => void) | undefined;
+    checkForUpdate().then((cleanup) => {
+      removeUpdateListener = cleanup;
+    });
+
+    return () => {
+      isMounted = false;
+      removeUpdateListener?.();
+    };
+  }, []);
 
   useEffect(() => {
     const handleLocationChange = () => {
