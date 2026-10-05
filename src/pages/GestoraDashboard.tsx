@@ -17,7 +17,6 @@ import { TeamPermissionsManager } from '../components/gestora/TeamPermissionsMan
 import { ClientManager } from '../components/gestora/ClientManager';
 import { MediaManager } from '../components/gestora/MediaManager';
 import { PDVCheckout } from '../components/client/PDVCheckout';
-import { VisagismoModal } from '../components/gestora/VisagismoModal';
 import { FinancialDashboard } from '../components/gestora/FinancialDashboard';
 import { CalendarClock, ShieldAlert, Package, FileText, Calendar, Users, MessageSquare, Bell, Target, QrCode, Settings, Scissors, Home, LogOut, Sparkles, Image as ImageIcon, WalletCards } from 'lucide-react';
 
@@ -25,7 +24,6 @@ export const GestoraDashboard: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'agenda' | 'financeiro' | 'payroll' | 'cms' | 'reviews' | 'notifications' | 'reminders' | 'clients' | 'qrcode' | 'landing_pages' | 'estoque' | 'fichas' | 'midias' | 'ausencias' | 'stealth' | 'permissions'>('agenda');
   const [selectedPDVAppointment, setSelectedPDVAppointment] = useState<any>(null);
-  const [isVisagismoOpen, setIsVisagismoOpen] = useState(false);
   const { settings } = useSalon();
   const { user, logout } = useAuth();
 
@@ -58,14 +56,6 @@ export const GestoraDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-3">
-          <button
-            type="button"
-            onClick={() => setIsVisagismoOpen(true)}
-            className="bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition shadow-lg"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Agente de Visagismo IA</span>
-          </button>
           <a
             href="/"
             onClick={handleGoToPublicHome}
@@ -314,10 +304,6 @@ export const GestoraDashboard: React.FC = () => {
           appointment={selectedPDVAppointment}
           onClose={() => setSelectedPDVAppointment(null)}
         />
-      )}
-
-      {isVisagismoOpen && (
-        <VisagismoModal onClose={() => setIsVisagismoOpen(false)} />
       )}
 
     </div>

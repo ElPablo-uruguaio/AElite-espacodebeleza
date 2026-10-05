@@ -3,6 +3,7 @@ import { Clock, Calendar, Sparkles, Upload } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 import { useAuth } from '../../context/AuthContext';
 import { ServiceItem } from '../../types';
+import { FallbackImage } from '../common/FallbackImage';
 
 interface ServiceCatalogProps {
   onSelectService: (service: ServiceItem) => void;
@@ -67,7 +68,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
               <div>
                 {/* Photo Header */}
                 <div className="h-52 w-full overflow-hidden relative">
-                  <img
+                  <FallbackImage
                     src={service.foto_url || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80'}
                     alt={service.nome}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

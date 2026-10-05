@@ -125,7 +125,7 @@ interface SalonContextType {
 
 const DEFAULT_SETTINGS: SiteSettings = {
   id: 'set-1',
-  nome_salao: 'Espaço Beleza VIP',
+  nome_salao: 'Elite Espaço de Beleza',
   whatsapp: '5511999999999',
   instagram: '@espacobelezavip',
   endereco: 'Av. Paulista, 1500 - Jardins, São Paulo - SP',
@@ -173,7 +173,7 @@ const DEFAULT_SERVICES: ServiceItem[] = [
     id: 'srv-4',
     nome: 'Design de Sobrancelhas com Henna',
     descricao: 'Mapeamento facial completo com pigmentação temporária de efeito natural.',
-    foto_url: 'https://images.unsplash.com/photo-1522337094846-8a83811221f6?auto=format&fit=crop&w=800&q=80',
+    foto_url: 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=800&q=80',
     duracao: 45,
     preco: 65.00,
     categoria: 'Estética',
@@ -314,12 +314,22 @@ const SalonContext = createContext<SalonContextType | undefined>(undefined);
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<SiteSettings>(() => {
     const s = localStorage.getItem('salon_settings');
-    return s ? JSON.parse(s) : DEFAULT_SETTINGS;
+    if (!s) return DEFAULT_SETTINGS;
+
+    const storedSettings = JSON.parse(s) as SiteSettings;
+    return storedSettings.nome_salao === 'Espaço Beleza VIP'
+      ? { ...storedSettings, nome_salao: DEFAULT_SETTINGS.nome_salao }
+      : storedSettings;
   });
 
   const [services, setServices] = useState<ServiceItem[]>(() => {
     const s = localStorage.getItem('salon_services');
-    return s ? JSON.parse(s) : DEFAULT_SERVICES;
+    if (!s) return DEFAULT_SERVICES;
+
+    return (JSON.parse(s) as ServiceItem[]).map(service => service.foto_url.includes('1522337094846-8a83811221f6')
+      ? { ...service, foto_url: 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=800&q=80' }
+      : service
+    );
   });
 
   const [employees, setEmployees] = useState<Employee[]>(() => {
@@ -613,16 +623,71 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const checkoutAppointment = async (id: string, metodoPagamento: string) => {
-    const app = appointments.find(a => a.id === id);
-    if (!app) return;
+    try {
+      const app = appointments.find(a => a.id === id);
+      if (!app) return;
 
-    if (isSupabaseConfigured && supabase) {
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const paymentMethod = metodoPagamento.trim();
+    if (!paymentMethod) {
+      throw new Error('A forma de pagamento é obrigatória para encerrar o atendimento.');
+    }
+
+    if (isSupabaseConfigured && supabase && uuidPattern.test(id)) {
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Sessão Supabase ausente. Faça login novamente para finalizar o atendimento.');
+      }
+
+      const appointmentUpdate = {
+        status: 'concluido' as const,
+        metodo_pagamento: paymentMethod
+      };
+
       const { error } = await supabase
         .from('appointments')
-        .update({ status: 'concluido', metodo_pagamento: metodoPagamento })
+        .update(appointmentUpdate)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        logSystemEvent('PDV', `Falha ao atualizar agendamento ${id}: ${error.code} ${error.message}`, 'error');
+        throw error;
+      }
+
+      const paymentDescription = `Atendimento ${id} - ${app.cliente_nome}`;
+      const { data: existingTransaction, error: transactionLookupError } = await supabase
+        .from('transacoes')
+        .select('id')
+        .eq('descricao', paymentDescription)
+        .limit(1);
+
+      if (transactionLookupError) {
+        logSystemEvent('PDV', `Falha ao verificar pagamento do agendamento ${id}: ${transactionLookupError.code} ${transactionLookupError.message}`, 'error');
+        throw transactionLookupError;
+      }
+
+      if (!existingTransaction?.length) {
+        const { error: transactionError } = await supabase
+          .from('transacoes')
+          .insert({
+            tipo: 'ENTRADA',
+            descricao: paymentDescription,
+            valor: app.valor_total,
+            categoria: 'Serviços Prestados',
+            fornecedor: null,
+            data_pagamento: new Date().toISOString().slice(0, 10),
+            status: 'PAGO',
+            profissional_id: app.profissional_id,
+          });
+
+        if (transactionError) {
+          logSystemEvent('PDV', `Falha ao registrar pagamento do agendamento ${id}: ${transactionError.code} ${transactionError.message}`, 'error');
+          throw transactionError;
+        }
+      }
+    } else if (isSupabaseConfigured && !uuidPattern.test(id)) {
+      logSystemEvent('PDV', `Atendimento local ${id} encerrado apenas no dispositivo; não possui UUID do Supabase.`, 'warn');
     }
 
     // 1. Mark appointment as completed
@@ -645,7 +710,12 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // 3. AUTOMATIC LOYALTY POINTS INCREMENT (+1 visit)
     addVisitaFidelidade(app.cliente_phone, app.cliente_nome);
 
-    logSystemEvent('PDV', `Caixa fechado para ${app.cliente_nome} via ${metodoPagamento.toUpperCase()}. Estoque e Fidelidade atualizados.`, 'success');
+      logSystemEvent('PDV', `Caixa fechado para ${app.cliente_nome} via ${metodoPagamento.toUpperCase()}. Estoque e Fidelidade atualizados.`, 'success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : JSON.stringify(error);
+      console.error(`[SalonContext] Falha ao finalizar atendimento ${id}: ${message}`, error);
+      logSystemEvent('PDV', `Não foi possível finalizar o atendimento ${id}: ${message}`, 'error');
+    }
   };
 
   const addStory = (storyData: Omit<StoryMedia, 'id' | 'publicado_em'>) => {

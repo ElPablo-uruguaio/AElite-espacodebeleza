@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Volume2, VolumeX, X, Play, Sparkles, Film } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 import { StoryMedia } from '../../types';
+import { FallbackImage } from '../common/FallbackImage';
 
 export const StoriesPlayer: React.FC = () => {
   const { stories } = useSalon();
   const [activeStory, setActiveStory] = useState<StoryMedia | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [failedVideoIds, setFailedVideoIds] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const activeStories = stories.filter(s => s.ativo);
@@ -61,20 +63,21 @@ export const StoriesPlayer: React.FC = () => {
             >
               <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600 group-hover:scale-105 transition-transform duration-300 shadow-lg">
                 <div className="w-full h-full rounded-full overflow-hidden bg-zinc-900 border-2 border-zinc-950 relative">
-                  {story.media_type === 'video' ? (
+                  {story.media_type === 'video' && !failedVideoIds.includes(story.id) ? (
                     <div className="w-full h-full relative">
                       <video
                         src={story.media_url}
                         className="w-full h-full object-cover"
                         muted
                         playsInline
+                        onError={() => setFailedVideoIds(current => [...new Set([...current, story.id])])}
                       />
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                         <Play className="w-5 h-5 text-white fill-white opacity-80" />
                       </div>
                     </div>
                   ) : (
-                    <img
+                    <FallbackImage
                       src={story.media_url}
                       alt={story.titulo || 'Story'}
                       className="w-full h-full object-cover"
@@ -103,7 +106,7 @@ export const StoriesPlayer: React.FC = () => {
                   VIP
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white">{activeStory.titulo || 'Espaço Beleza VIP'}</p>
+                  <p className="text-xs font-bold text-white">{activeStory.titulo || 'Elite Espaço de Beleza'}</p>
                   <p className="text-[10px] text-zinc-300 flex items-center gap-1">
                     <Film className="w-3 h-3 text-amber-400 inline" /> Loop Infinito Ativo
                   </p>
@@ -133,7 +136,7 @@ export const StoriesPlayer: React.FC = () => {
 
             {/* Media Content */}
             <div className="w-full h-full relative flex items-center justify-center bg-black">
-              {activeStory.media_type === 'video' ? (
+              {activeStory.media_type === 'video' && !failedVideoIds.includes(activeStory.id) ? (
                 <video
                   ref={videoRef}
                   src={activeStory.media_url}
@@ -141,10 +144,11 @@ export const StoriesPlayer: React.FC = () => {
                   loop
                   playsInline
                   muted={isMuted}
+                  onError={() => setFailedVideoIds(current => [...new Set([...current, activeStory.id])])}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <img
+                <FallbackImage
                   src={activeStory.media_url}
                   alt="Story VIP"
                   className="w-full h-full object-cover"

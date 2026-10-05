@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- 3. SITE SETTINGS TABLE
 CREATE TABLE IF NOT EXISTS public.site_settings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  nome_salao TEXT NOT NULL DEFAULT 'Espaço Beleza VIP',
+  nome_salao TEXT NOT NULL DEFAULT 'Elite Espaço de Beleza',
   whatsapp TEXT NOT NULL DEFAULT '5511999999999',
   instagram TEXT DEFAULT '@espacobelezavip',
   endereco TEXT DEFAULT 'Av. Principal, 1000 - Centro, São Paulo - SP',
@@ -306,7 +306,12 @@ CREATE POLICY "Public Insert Fila Espera" ON public.fila_espera FOR INSERT WITH 
 CREATE POLICY "Manager All Services" ON public.services FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Employees" ON public.employees FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Employee Services" ON public.profissional_servico FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Manager All Appointments" ON public.appointments FOR ALL USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Manager All Appointments" ON public.appointments;
+CREATE POLICY "Manager All Appointments" ON public.appointments
+  FOR ALL
+  TO authenticated
+  USING (TRUE)
+  WITH CHECK (TRUE);
 CREATE POLICY "Manager All Payroll" ON public.payroll FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Stories" ON public.stories FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Manager All Notifications" ON public.notifications FOR ALL USING (auth.role() = 'authenticated');
@@ -341,8 +346,12 @@ ON CONFLICT (nome) DO NOTHING;
 -- INITIAL SEED DATA FOR DEMO / FIRST RUN
 -- ==============================================================================
 INSERT INTO public.site_settings (nome_salao, whatsapp, instagram, endereco, chave_pix, valor_sinal_padrao, google_review_link)
-VALUES ('Espaço Beleza VIP', '5511999999999', '@espacobelezavip', 'Av. Paulista, 1500 - Jardins, São Paulo - SP', '11999999999', 20.00, 'https://g.page/r/espacobelezavip/review')
+VALUES ('Elite Espaço de Beleza', '5511999999999', '@espacobelezavip', 'Av. Paulista, 1500 - Jardins, São Paulo - SP', '11999999999', 20.00, 'https://g.page/r/espacobelezavip/review')
 ON CONFLICT DO NOTHING;
+
+UPDATE public.site_settings
+SET nome_salao = 'Elite Espaço de Beleza'
+WHERE nome_salao = 'Espaço Beleza VIP';
 
 INSERT INTO public.services (nome, descricao, foto_url, duracao, preco, categoria) VALUES
 ('Corte Feminino & Escova', 'Modelagem personalizada de corte com lavagem especial e escova modelada.', 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=800&q=80', 60, 140.00, 'Cabelos'),

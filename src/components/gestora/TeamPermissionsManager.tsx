@@ -9,6 +9,7 @@ import {
   saveTeamPermissions,
   TEAM_PERMISSION_LABELS,
 } from '../../utils/permissions';
+import { FallbackImage } from '../common/FallbackImage';
 
 type EmployeeDraft = {
   nome: string;
@@ -160,7 +161,7 @@ export const TeamPermissionsManager: React.FC = () => {
                 <article key={employee.id} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex min-w-0 items-center gap-3">
-                      <img
+                      <FallbackImage
                         src={employee.foto_url || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=120&q=80'}
                         alt={employee.nome}
                         className="h-12 w-12 shrink-0 rounded-full border border-zinc-700 object-cover"

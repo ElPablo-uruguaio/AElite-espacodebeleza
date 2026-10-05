@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Calendar, ArrowRight, ShieldCheck, Upload, Image } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 import { useAuth } from '../../context/AuthContext';
+import { FallbackImage } from '../common/FallbackImage';
 
 interface HeroCarouselProps {
   onOpenBooking: () => void;
@@ -52,7 +53,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onOpenBooking }) => 
           key={idx}
           className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         >
-          <img
+          <FallbackImage
             src={url}
             alt="Salão de beleza banner"
             className="w-full h-full object-cover object-center transform scale-105 transition-transform duration-10000"

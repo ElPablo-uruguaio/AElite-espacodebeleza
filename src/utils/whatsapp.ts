@@ -24,14 +24,14 @@ export function createWhatsAppReminderLink({
   servicoNome = 'seu serviço',
   profissionalNome = 'nossa equipe',
   dataHoraStr = 'hoje',
-  nomeSalao = 'Espaço Beleza VIP'
+  nomeSalao = 'Elite Espaço de Beleza'
 }: WhatsAppMessageParams): string {
   const cleanPhone = formatPhoneForWhatsApp(phone);
   const text = `Olá, *${clienteNome}*! ✨\n\nPassando para lembrar do seu agendamento no *${nomeSalao}*:\n\n📅 *Data/Horário:* ${dataHoraStr}\n💇‍♀️ *Serviço:* ${servicoNome}\n👤 *Profissional:* ${profissionalNome}\n\nTe aguardamos com muito carinho! Se precisar remarcar, nos avise por aqui. 💖`;
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
 }
 
-export function createWhatsAppBirthdayLink(phone: string, clienteNome: string, nomeSalao = 'Espaço Beleza VIP'): string {
+export function createWhatsAppBirthdayLink(phone: string, clienteNome: string, nomeSalao = 'Elite Espaço de Beleza'): string {
   const cleanPhone = formatPhoneForWhatsApp(phone);
   const text = `Olá, *${clienteNome}*! 🎉\n\nA equipe do *${nomeSalao}* deseja um feliz aniversário, cheio de beleza, alegria e momentos especiais! 💖\n\nEsperamos comemorar com você em breve. ✨`;
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
@@ -43,7 +43,7 @@ export function createWhatsAppConfirmationLink({
   servicoNome = 'seu serviço',
   profissionalNome = 'nossa equipe',
   dataHoraStr = 'horário marcado',
-  nomeSalao = 'Espaço Beleza VIP'
+  nomeSalao = 'Elite Espaço de Beleza'
 }: WhatsAppMessageParams): string {
   const cleanPhone = formatPhoneForWhatsApp(phone);
   const text = `Olá, *${clienteNome}*! 🎉\n\nSeu agendamento no *${nomeSalao}* foi *CONFIRMADO* com sucesso!\n\n📅 *Data/Horário:* ${dataHoraStr}\n💇‍♀️ *Serviço:* ${servicoNome}\n👤 *Profissional:* ${profissionalNome}\n\nSua vaga está garantida. Te aguardamos com muito carinho! ✨`;
@@ -53,7 +53,7 @@ export function createWhatsAppConfirmationLink({
 export function createWhatsAppGoogleReviewLink({
   phone,
   clienteNome,
-  nomeSalao = 'Espaço Beleza VIP',
+  nomeSalao = 'Elite Espaço de Beleza',
   googleReviewLink = 'https://g.page/r/espacobelezavip/review'
 }: WhatsAppMessageParams): string {
   const cleanPhone = formatPhoneForWhatsApp(phone);
@@ -64,7 +64,7 @@ export function createWhatsAppGoogleReviewLink({
 export function createWhatsAppSurveyLink({
   phone,
   clienteNome,
-  nomeSalao = 'Espaço Beleza VIP'
+  nomeSalao = 'Elite Espaço de Beleza'
 }: WhatsAppMessageParams): string {
   const cleanPhone = formatPhoneForWhatsApp(phone);
   const text = `Olá, *${clienteNome}*! 🥰\n\nComo foi sua experiência no *${nomeSalao}* hoje?\n\nQueremos saber o que você achou do atendimento e do resultado! Se tiver qualquer sugestão, responda esta mensagem. Adoramos ouvir você! 💬✨`;

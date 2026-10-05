@@ -27,7 +27,7 @@ export const PDVCheckout: React.FC<PDVCheckoutProps> = ({ appointment, onClose }
 
     try {
       await new Promise(resolve => setTimeout(resolve, 300));
-      checkoutAppointment(appointment.id, paymentMethod);
+      await checkoutAppointment(appointment.id, paymentMethod);
       onClose();
     } catch {
       setError('Não foi possível finalizar o atendimento. Tente novamente.');
@@ -98,7 +98,7 @@ export const PDVCheckout: React.FC<PDVCheckoutProps> = ({ appointment, onClose }
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-600 px-4 py-3.5 font-bold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading && <Loader2 className="h-5 w-5 animate-spin" />}
-          <span>{loading ? 'Finalizando atendimento...' : 'Confirmar e Finalizar Atendimento'}</span>
+          <span>{loading ? 'Encerrando procedimento...' : 'Encerrar Procedimento e Receber'}</span>
         </button>
       </div>
     </div>
