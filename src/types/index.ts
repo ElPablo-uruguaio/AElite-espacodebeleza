@@ -48,6 +48,7 @@ export interface ServiceItem {
   foto_url: string;
   duracao: number; // minutes
   preco: number;
+  preco_a_partir?: boolean;
   categoria: string;
   ativo: boolean;
   created_at?: string;

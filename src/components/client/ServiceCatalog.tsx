@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Clock, Calendar, Sparkles, Upload } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Calendar, Clock, Search, Sparkles, Upload } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 import { useAuth } from '../../context/AuthContext';
 import { ServiceItem } from '../../types';
@@ -13,15 +13,31 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
   const { services, updateService } = useSalon();
   const { user } = useAuth();
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
   const isAdmin = user?.role === 'admin';
 
-  const categories = ['Todos', ...Array.from(new Set(services.map(s => s.categoria)))];
+  const categories = useMemo(
+    () => ['Todos', ...Array.from(new Set(services.map(s => s.categoria)))],
+    [services]
+  );
   const activeServices = services.filter(s => s.ativo);
 
-  const filteredServices = activeCategory === 'Todos'
-    ? activeServices
-    : activeServices.filter(s => s.categoria === activeCategory);
+  const filteredServices = activeServices.filter(service => {
+    const matchesCategory = activeCategory === 'Todos' || service.categoria === activeCategory;
+    const matchesSearch = service.nome.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase().trim());
+    return matchesCategory && matchesSearch;
+  });
+
+  const toggleDescription = (serviceId: string) => {
+    setExpandedServices(current => {
+      const next = new Set(current);
+      if (next.has(serviceId)) next.delete(serviceId);
+      else next.add(serviceId);
+      return next;
+    });
+  };
 
   return (
     <section id="servicos" className="py-16 bg-zinc-950 text-zinc-100">
@@ -41,8 +57,20 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
           </p>
         </div>
 
+        <div className="relative max-w-xl mx-auto mb-6">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Buscar serviço..."
+            aria-label="Buscar serviço por nome"
+            className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 py-3 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-rose-500"
+          />
+        </div>
+
         {/* Categories Tabs */}
-        <div className="flex items-center justify-center space-x-2 overflow-x-auto no-scrollbar pb-6">
+        <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar pb-6">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -117,9 +145,23 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
                   <h3 className="text-xl font-bold text-white group-hover:text-rose-400 transition mb-2">
                     {service.nome}
                   </h3>
-                  <p className="text-xs text-zinc-400 leading-relaxed mb-4 font-light">
-                    {service.descricao}
-                  </p>
+                  <div className="text-xs text-zinc-400 leading-relaxed mb-4 font-light">
+                    <p>
+                      {expandedServices.has(service.id) || service.descricao.length <= 80
+                        ? service.descricao
+                        : `${service.descricao.slice(0, 80).trimEnd()}...`}
+                    </p>
+                    {service.descricao.length > 80 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleDescription(service.id)}
+                        className="mt-1 font-semibold text-rose-400 hover:text-rose-300"
+                        aria-expanded={expandedServices.has(service.id)}
+                      >
+                        {expandedServices.has(service.id) ? 'Ler menos' : 'Ler mais'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -131,7 +173,10 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
                     <span>{service.duracao} min</span>
                   </div>
                   <div className="text-2xl font-extrabold text-white">
-                    R$ {service.preco.toFixed(2).replace('.', ',')}
+                    {service.preco_a_partir && <span className="mr-1 text-xs font-medium text-zinc-400">A partir de</span>}
+                    {Number.isFinite(service.preco)
+                      ? `R$ ${service.preco.toFixed(2).replace('.', ',')}`
+                      : 'Consultar'}
                   </div>
                 </div>
 
@@ -147,6 +192,12 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
             </div>
           ))}
         </div>
+
+        {filteredServices.length === 0 && (
+          <p className="py-12 text-center text-sm text-zinc-400">
+            Nenhum serviço encontrado para sua busca.
+          </p>
+        )}
 
       </div>
     </section>

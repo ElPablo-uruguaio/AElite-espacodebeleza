@@ -1,4 +1,4 @@
-const CACHE_NAME = 'beleza-vip-cache-v3';
+const CACHE_NAME = 'beleza-vip-cache-v4';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -8,9 +8,9 @@ const urlsToCache = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)),
-    ])
+    caches.open(CACHE_NAME).then((cache) => Promise.all(
+      urlsToCache.map((url) => cache.add(url).catch(() => undefined))
+    ))
   );
 });
 
@@ -39,20 +39,49 @@ self.addEventListener('activate', (event) => {
 // Prefer the current deployment so hashed bundles do not become stale.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const requestUrl = new URL(event.request.url);
+  // External media and the optional local image fallback must be handled by the browser.
+  if (
+    requestUrl.origin !== self.location.origin ||
+    requestUrl.pathname === '/salon-image-fallback.svg'
+  ) {
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok && event.request.url.startsWith(self.location.origin)) {
+    (async () => {
+      try {
+        const response = await fetch(event.request);
+
+        if (response.ok) {
           const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          void caches.open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, responseToCache))
+            .catch(() => undefined);
         }
+
         return response;
-      })
-      .catch(() => caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-        if (event.request.mode === 'navigate') return caches.match('/');
-        return Response.error();
-      }))
+      } catch (error) {
+        console.warn('[PWA] Falha ao carregar recurso local; usando cache.', error);
+        try {
+          const cachedResponse = await caches.match(event.request);
+          if (cachedResponse) return cachedResponse;
+
+          if (event.request.mode === 'navigate') {
+            const cachedHome = await caches.match('/');
+            if (cachedHome) return cachedHome;
+          }
+        } catch (cacheError) {
+          console.warn('[PWA] Falha ao consultar o cache.', cacheError);
+        }
+
+        return new Response('', {
+          status: 504,
+          statusText: 'Recurso indisponivel'
+        });
+      }
+    })()
   );
 });
 

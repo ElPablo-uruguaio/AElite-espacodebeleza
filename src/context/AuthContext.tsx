@@ -138,15 +138,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error || !data.user) {
-      logSystemEvent('AUTH', error?.message || 'Falha na autenticação Supabase.', 'warn');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.user) {
+        const authMessage = error?.message || 'Usuário não retornado pelo Supabase.';
+        console.error(`[Auth] Falha no signInWithPassword: ${authMessage}`, {
+          email,
+          message: authMessage,
+          status: error?.status,
+          code: error?.code,
+          name: error?.name
+        });
+        logSystemEvent('AUTH', authMessage, 'warn');
+        return false;
+      }
+
+      setUser({ ...profile, id: data.user.id, email: data.user.email || email });
+      logSystemEvent('AUTH', `Login Supabase efetuado como ${profile.role}.`, 'success');
+      return true;
+    } catch (error) {
+      console.error('[Auth] Erro inesperado no signInWithPassword:', error);
+      logSystemEvent('AUTH', 'Erro inesperado durante a autenticação Supabase.', 'error');
       return false;
     }
-
-    setUser({ ...profile, id: data.user.id, email: data.user.email || email });
-    logSystemEvent('AUTH', `Login Supabase efetuado como ${profile.role}.`, 'success');
-    return true;
   };
 
   const changePassword = async (_currentPass: string, newPass: string): Promise<boolean> => {
