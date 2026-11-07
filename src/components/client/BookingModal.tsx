@@ -23,6 +23,11 @@ interface BookingModalProps {
 const OPENING_HOUR = 9;
 const CLOSING_HOUR = 19;
 
+const formatServicePrice = (service?: ServiceItem | null) => {
+  if (!service || service.preco_indisponivel) return 'Consultar';
+  return `R$ ${service.preco.toFixed(2).replace('.', ',')}`;
+};
+
 const getNextBusinessDate = (): string => {
   const date = new Date();
   while (date.getDay() === 0 || date.getDay() === 1) {
@@ -188,7 +193,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
                   >
                     <div>
                       <p className="text-sm font-bold">{srv.nome}</p>
-                      <p className="text-xs text-zinc-400">{srv.duracao} min • R$ {srv.preco.toFixed(2)}</p>
+                      <p className="text-xs text-zinc-400">{srv.duracao} min • {formatServicePrice(srv)}</p>
                     </div>
                     {selectedService?.id === srv.id && <CheckCircle2 className="w-5 h-5 text-rose-400" />}
                   </button>
@@ -398,7 +403,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
               </div>
               <div className="border-t border-zinc-800 pt-2 flex justify-between text-sm">
                 <span className="text-zinc-300 font-semibold">Valor Total:</span>
-                <span className="font-extrabold text-white">R$ {selectedService?.preco.toFixed(2)}</span>
+                <span className="font-extrabold text-white">{formatServicePrice(selectedService)}</span>
               </div>
             </div>
 
@@ -440,7 +445,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
                <p className="font-bold text-emerald-400">O que acontece agora?</p>
                <p>1. Você receberá um WhatsApp confirmando sua reserva.</p>
                <p>2. No dia do atendimento, procure o balcão.</p>
-               <p>3. O pagamento (R$ {selectedService?.preco.toFixed(2)}) será realizado no local após o serviço.</p>
+               <p>3. O pagamento ({formatServicePrice(selectedService)}) será realizado no local após o serviço.</p>
             </div>
 
             <button

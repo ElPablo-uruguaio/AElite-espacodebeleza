@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
-import { PublicHome } from './pages/PublicHome';
 import { GestoraDashboard } from './pages/GestoraDashboard';
 import { DevMasterDashboard } from './pages/DevMasterDashboard';
 import { PromotionalLanding } from './pages/PromotionalLanding';
 import { CollaboratorDashboard } from './pages/CollaboratorDashboard';
+import { SalonSystemSupabase } from './components/SalonCatalog';
 
 export const App: React.FC = () => {
   const { role, isLoggedIn } = useAuth();
@@ -76,7 +76,7 @@ export const App: React.FC = () => {
   }
 
   // Default route: Public Landing Page for clients
-  return <PublicHome />;
+  return <SalonSystemSupabase />;
 };
 
 export default App;

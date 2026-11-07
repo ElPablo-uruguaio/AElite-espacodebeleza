@@ -138,58 +138,69 @@ const DEFAULT_SETTINGS: SiteSettings = {
   ]
 };
 
+const DEFAULT_SERVICE_IMAGE = 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80';
+const SERVICE_CATALOG_VERSION = '2026-11-03';
 const DEFAULT_SERVICES: ServiceItem[] = [
-  {
-    id: 'srv-1',
-    nome: 'Corte Feminino & Escova Modelada',
-    descricao: 'Lavagem relaxante com produtos profissionais, corte visagista e finalização com escova.',
-    foto_url: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=800&q=80',
-    duracao: 60,
-    preco: 140.00,
-    categoria: 'Cabelos',
-    ativo: true
-  },
-  {
-    id: 'srv-2',
-    nome: 'Mechas Iluminadas / Balayage',
-    descricao: 'Técnica de clareamento suave com nutrição e matização de alta performance.',
-    foto_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-    duracao: 180,
-    preco: 380.00,
-    categoria: 'Cabelos',
-    ativo: true
-  },
-  {
-    id: 'srv-3',
-    nome: 'Manicure & Pedicure em Gel',
-    descricao: 'Cutilagem russa com acabamento de alta durabilidade e brilho intenso.',
-    foto_url: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80',
-    duracao: 75,
-    preco: 95.00,
-    categoria: 'Unhas',
-    ativo: true
-  },
-  {
-    id: 'srv-4',
-    nome: 'Design de Sobrancelhas com Henna',
-    descricao: 'Mapeamento facial completo com pigmentação temporária de efeito natural.',
-    foto_url: 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=800&q=80',
-    duracao: 45,
-    preco: 65.00,
-    categoria: 'Estética',
-    ativo: true
-  },
-  {
-    id: 'srv-5',
-    nome: 'Maquiagem Social VIP',
-    descricao: 'Make duradoura para casamentos e festas com cílios de seda inclusos.',
-    foto_url: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80',
-    duracao: 60,
-    preco: 180.00,
-    categoria: 'Make',
-    ativo: true
-  }
-];
+  ['Blindagem', 'Mãos e Pés', 85, '1h 25min', 'Blindagem', 85],
+  ['Fibra de Vidro - Colocação', 'Mãos e Pés', 180, '3h', 'Colocação de Unha de Fibra de Vidro.', 180],
+  ['Fibra de Vidro - Manutenção', 'Mãos e Pés', 150, '2h 30min', 'Manutenção de unhas de Fibra de Vidro.', 130],
+  ['Manicure', 'Mãos e Pés', 35, '35min', 'Cutilação e esmaltação das unhas das mãos.', 35],
+  ['Manicure - Esmaltação em Gel', 'Mãos e Pés', 60, '1h', 'Manicure - Esmaltação em gel', 50],
+  ['Manicure - Reconstrução em Gel (Por Unha)', 'Mãos e Pés', 40, '40min', 'Manicure - Reconstrução em gel (por unha)', 15],
+  ['Manicure e Pedicure', 'Mãos e Pés', 70, '1h 10min', 'Cutilação e esmaltação das unhas das mãos e dos pés.', 60],
+  ['Manicure e Pedicure - Esmaltação em Gel', 'Mãos e Pés', 80, '1h 20min', 'Cutilação e esmaltação das unhas das mãos e dos pés. A base de Esmalte em Gel é a primeira a ser aplicada nas unhas e serve para dar mais fixação e durabilidade no esmalte, que pode chegar até 15 dias.', 110],
+  ['Manicure e Pedicure - Francesinha', 'Mãos e Pés', 75, '1h 15min', 'Cutilação e esmaltação das unhas das mãos e dos pés no estilo francesinha.', 70],
+  ['Pedicure', 'Mãos e Pés', 45, '45min', 'Cutilação e esmaltação das unhas dos pés.', 40],
+  ['Pedicure - Francesinha', 'Mãos e Pés', 45, '45min', 'Cutilação e esmaltação das unhas dos pés no estilo francesinha.', 45],
+  ['Pedicure com Esmaltação em Gel', 'Mãos e Pés', 60, '1h', 'Pedicure com esmaltação em gel', 60],
+  ['Remoção', 'Mãos e Pés', 45, '45min', 'Remoção de unha fibra ou tips. Não inclui cutilagem e esmaltação. OBSERVAÇÃO: Caso após a remoção o cliente solicite o serviço de manicure ou blindagem de unhas, será cobrado o valor vigente dos serviços. Em casos de remoção para nova aplicação de alongamento, o cliente ganha 50% de desconto no valor do serviço de remoção.', 50],
+  ['Spa dos Pés', 'Mãos e Pés', 60, '1h', 'Remove células mortas e suaviza calosidades e rachaduras. Hidratação: Nutre e hidrata a pele dos pés, prevenindo o ressecamento. Bem-estar: Promove uma sensação geral de bem-estar e relaxamento. ESTE SERVIÇO NÃO INCLUI CUTILAGEM OU ESMALTAÇÃO.', 55],
+  ['Spa dos Pés Completo', 'Mãos e Pés', 50, '50min', 'Remove células mortas e suaviza calosidades e rachaduras. Hidratação: Nutre e hidrata a pele dos pés, prevenindo o ressecamento. Bem-estar: Promove uma sensação geral de bem-estar e relaxamento. Inclui cutilagem e esmaltação.', 75],
+  ['Aplicação de Coloração', 'Coloração/Descoloração', 90, '1h 30min', 'Aplicação de Coloração. Produto levado pelo cliente. Inclui SECAGEM. Ao incluir o serviço de prancha, será cobrado o valor adicional de R$20,00', 60],
+  ['Coloração / Tonalização - Cabelo Longo', 'Coloração/Descoloração', 120, '2h', 'Coloração com produtos do salão.', 160],
+  ['Coloração / Tonalização - Cabelo Médio', 'Coloração/Descoloração', 120, '2h', 'Coloração com produtos do salão.', 140],
+  ['Coloração / Tonalização - Cabelo Extra Longo', 'Coloração/Descoloração', 150, '2h 30min', 'Coloração com produtos do salão.', 190],
+  ['Coloração / Tonalização - Retoque de Raiz', 'Coloração/Descoloração', 90, '1h 30min', 'Coloração com produtos do Salão de Beleza.', 130],
+  ['Decapagem / Descoloração', 'Coloração/Descoloração', 240, '4h', 'Descolorir todo o cabelo. Essa técnica remove toda a cor do cabelo, seja a natural, ou coloridos.', 350, true],
+  ['Luzes/Mechas/Descoloração - Cabelo Extra Longo', 'Coloração/Descoloração', 300, '5h', 'Procedimento não inclui tratamentos pós química, corte etc.', 800, true],
+  ['Luzes/Mechas/Descoloração - Cabelo Longo', 'Coloração/Descoloração', 240, '4h', 'O procedimento não inclui tratamento pós química, corte etc.', 550, true],
+  ['Luzes/Mechas/Descoloração - Cabelo Médio', 'Coloração/Descoloração', 240, '4h', 'Procedimento não inclui tratamentos pós química, corte etc.', 360, true],
+  ['Luzes/Mechas/Descoloração Retoque de Raiz', 'Coloração/Descoloração', 180, '3h', 'Retoque de raiz até 5 cm. Procedimento não inclui tratamentos pós-química, corte, etc.', 290, true],
+  ['Matização', 'Coloração/Descoloração', 90, '1h 30min', 'Técnica utilizada para correção e neutralização de tons indesejados. Realce da cor, trazendo brilho e luminosidade aos fios.', 100],
+  ['Corte - Franja', 'Cabelo', 30, '30min', 'Corte apenas da franja do cabelo.', 20],
+  ['Corte Feminino', 'Cabelo', 90, '1h 30min', 'Higienização e Escova.', 70],
+  ['Corte Infantil', 'Cabelo', 90, '1h 30min', 'Corte Infantil.', 80],
+  ['Corte Masculino', 'Cabelo', 45, '45min', 'Higienização e Secagem.', 40],
+  ['Escova Cabelo Curto', 'Cabelo', 70, '1h 10min', 'Higienização e escova.', 40],
+  ['Escova Cabelo Extra Longo', 'Cabelo', 90, '1h 30min', 'Higienização e Escova.', 75],
+  ['Escova Cabelo Longo', 'Cabelo', 80, '1h 20min', 'Higienização e escova.', 55],
+  ['Escova Cabelo Médio', 'Cabelo', 75, '1h 15min', 'Higienização e escova.', 45],
+  ['Manutenção Mega Fita Adesiva', 'Cabelo', 180, '3h', 'Remoção, higienização bactericida e reaplicação das extensões.', 0, false, true],
+  ['Brow Lamination', 'Sobrancelha', 60, '1h', 'Brow lamination é um tratamento de design de sobrancelhas que visa alinhar e fixar os pelos, criando um efeito preenchido e natural. É como um lifting para as sobrancelhas, usando produtos específicos para amolecer os fios e permitir que sejam moldados na direção desejada. O resultado são sobrancelhas mais volumosas e definidas.', 100],
+  ['Coloração de Sobrancelhas e Cílios', 'Sobrancelha', 30, '30min', 'Procedimento que colore somente os pelos da sobrancelha e cílios. Ideal para pelos brancos ou claros. NÃO É HENNA. Não inclui limpeza ou design de sobrancelhas.', 35],
+  ['Design de Sobrancelha', 'Sobrancelha', 35, '35min', 'Design de Sobrancelha.', 40],
+  ['Design de Sobrancelhas com Henna', 'Sobrancelha', 30, '30min', 'Coloração de Sobrancelhas com henna.', 50],
+  ['Lash Lifting', 'Sobrancelha', 40, '40min', 'Lash lifting, ou lifting de cílios, é um procedimento estético que visa curvar e levantar os cílios naturais, proporcionando um efeito de alongamento e volume, sem a necessidade de cílios postiços ou extensões. É uma técnica que utiliza produtos específicos para mudar o formato dos fios, seguido de hidratação para prolongar a duração do resultado.', 100],
+  ['Limpeza Sobrancelha', 'Sobrancelha', 30, '30min', 'Limpeza de sobrancelhas.', 30],
+  ['Microblading', 'Sobrancelha', 180, '3h', 'Técnica semipermanente de maquiagem que visa aperfeiçoar o formato e a aparência das sobrancelhas, criando um efeito natural com fios hiper-realistas. É feito com uma ferramenta manual chamada tebori, que deposita pigmentos na pele, resultando em traços finos que se assemelham a pelos reais. O resultado pode durar de 12 a 18 meses, dependendo de vários fatores, como tipo de pele e cuidados pós-procedimento.', 450],
+  ['Baby Liss / Cachos', 'Penteados', 90, '1h 30min', 'Cachos nos cabelos. Técnica pode ser realizada manualmente ou com babyliss. Os cachos estão em alta e dão um ar informal ao visual.', 80],
+  ['Penteado', 'Penteados', 90, '1h 30min', 'Penteado.', 140],
+  ['Penteado de Noiva', 'Penteados', 120, '2h', 'Penteado de Noiva.', 190, true],
+  ['Teste de Penteado', 'Penteados', 120, '2h', 'Teste de Penteado.', 200],
+  ['Maquiagem', 'Maquiagem', 60, '1h', 'Maquiagem natural, maquiagem social e maquiagem para eventos especiais.', 150],
+  ['Maquiagem de Noiva', 'Maquiagem', 90, '1h 30min', 'Maquiagem de Noiva.', 0, false, true]
+].map(([nome, categoria, duracao, _duracaoTexto, descricao, preco, preco_a_partir = false, preco_indisponivel = false], index) => ({
+  id: `catalog-${index + 1}`,
+  nome: nome as string,
+  descricao: descricao as string,
+  foto_url: DEFAULT_SERVICE_IMAGE,
+  duracao: duracao as number,
+  preco: preco as number,
+  preco_a_partir: preco_a_partir as boolean,
+  preco_indisponivel: preco_indisponivel as boolean,
+  categoria: categoria as string,
+  ativo: true
+}));
 
 const DEFAULT_EMPLOYEES: Employee[] = [
   {
@@ -324,7 +335,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [services, setServices] = useState<ServiceItem[]>(() => {
     const s = localStorage.getItem('salon_services');
-    if (!s) return DEFAULT_SERVICES;
+    if (!s || localStorage.getItem('salon_services_version') !== SERVICE_CATALOG_VERSION) {
+      localStorage.setItem('salon_services_version', SERVICE_CATALOG_VERSION);
+      return DEFAULT_SERVICES;
+    }
 
     return (JSON.parse(s) as ServiceItem[]).map(service => service.foto_url.includes('1522337094846-8a83811221f6')
       ? { ...service, foto_url: 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=800&q=80' }
@@ -465,7 +479,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Sync state to localStorage
   useEffect(() => { localStorage.setItem('salon_settings', JSON.stringify(settings)); }, [settings]);
-  useEffect(() => { localStorage.setItem('salon_services', JSON.stringify(services)); }, [services]);
+  useEffect(() => {
+    localStorage.setItem('salon_services', JSON.stringify(services));
+    localStorage.setItem('salon_services_version', SERVICE_CATALOG_VERSION);
+  }, [services]);
   useEffect(() => { localStorage.setItem('salon_employees', JSON.stringify(employees)); }, [employees]);
   useEffect(() => { localStorage.setItem('salon_employee_services', JSON.stringify(employeeServiceIds)); }, [employeeServiceIds]);
   useEffect(() => { localStorage.setItem('salon_appointments', JSON.stringify(appointments)); }, [appointments]);

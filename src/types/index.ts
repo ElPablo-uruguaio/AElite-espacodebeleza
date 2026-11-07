@@ -49,6 +49,7 @@ export interface ServiceItem {
   duracao: number; // minutes
   preco: number;
   preco_a_partir?: boolean;
+  preco_indisponivel?: boolean;
   categoria: string;
   ativo: boolean;
   created_at?: string;

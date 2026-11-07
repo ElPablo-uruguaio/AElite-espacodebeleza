@@ -26,7 +26,10 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
 
   const filteredServices = activeServices.filter(service => {
     const matchesCategory = activeCategory === 'Todos' || service.categoria === activeCategory;
-    const matchesSearch = service.nome.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase().trim());
+    const normalizedName = (service.nome ?? '').toLocaleLowerCase();
+    const normalizedDescription = (service.descricao ?? '').toLocaleLowerCase();
+    const normalizedSearchTerm = searchTerm.toLocaleLowerCase().trim();
+    const matchesSearch = normalizedName.includes(normalizedSearchTerm) || normalizedDescription.includes(normalizedSearchTerm);
     return matchesCategory && matchesSearch;
   });
 
@@ -88,11 +91,18 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-          {filteredServices.map((service) => (
-            <div
-              key={service.id}
-              className="bg-zinc-900/80 border border-zinc-800 rounded-3xl overflow-hidden hover:border-zinc-700 transition-all duration-300 group flex flex-col justify-between shadow-xl"
-            >
+          {filteredServices.map((service) => {
+            const descriptionText = (service.descricao ?? '').trim();
+            const hasLongDescription = descriptionText.length > 80;
+            const displayDescription = expandedServices.has(service.id) || !hasLongDescription
+              ? descriptionText || 'Sem descrição disponível.'
+              : `${descriptionText.slice(0, 80).trimEnd()}...`;
+
+            return (
+              <div
+                key={service.id}
+                className="bg-zinc-900/80 border border-zinc-800 rounded-3xl overflow-hidden hover:border-zinc-700 transition-all duration-300 group flex flex-col justify-between shadow-xl"
+              >
               <div>
                 {/* Photo Header */}
                 <div className="h-52 w-full overflow-hidden relative">
@@ -146,12 +156,8 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
                     {service.nome}
                   </h3>
                   <div className="text-xs text-zinc-400 leading-relaxed mb-4 font-light">
-                    <p>
-                      {expandedServices.has(service.id) || service.descricao.length <= 80
-                        ? service.descricao
-                        : `${service.descricao.slice(0, 80).trimEnd()}...`}
-                    </p>
-                    {service.descricao.length > 80 && (
+                    <p>{displayDescription}</p>
+                    {hasLongDescription && (
                       <button
                         type="button"
                         onClick={() => toggleDescription(service.id)}
@@ -174,7 +180,9 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
                   </div>
                   <div className="text-2xl font-extrabold text-white">
                     {service.preco_a_partir && <span className="mr-1 text-xs font-medium text-zinc-400">A partir de</span>}
-                    {Number.isFinite(service.preco)
+                    {service.preco_indisponivel
+                      ? 'Consultar'
+                      : Number.isFinite(service.preco)
                       ? `R$ ${service.preco.toFixed(2).replace('.', ',')}`
                       : 'Consultar'}
                   </div>
@@ -190,7 +198,8 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({ onSelectService 
               </div>
 
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {filteredServices.length === 0 && (
