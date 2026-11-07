@@ -14,6 +14,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenDelayModal 
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginType, setLoginType] = useState<'gestora' | 'dev'>('gestora');
+  const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -22,24 +23,27 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenDelayModal 
     setErrorMessage('');
 
     if (loginType === 'gestora') {
-      loginAsGestora(inputPassword).then(success => {
+      loginAsGestora(inputEmail, inputPassword).then(success => {
         if (success) {
           setShowLoginModal(false);
+          setInputEmail('');
           setInputPassword('');
           window.location.hash = '#/admin';
         } else {
-          setErrorMessage('Senha incorreta para a Gestora.');
+          setErrorMessage('E-mail ou senha inválidos no Supabase Auth.');
         }
       });
     } else {
-      const success = loginAsDevAdmin(inputPassword);
+      loginAsDevAdmin(inputEmail, inputPassword).then(success => {
       if (success) {
         setShowLoginModal(false);
+        setInputEmail('');
         setInputPassword('');
         window.location.hash = '#/dev';
       } else {
-        setErrorMessage('Chave Dev Master inválida. Tente "devmaster2026".');
+        setErrorMessage('E-mail ou senha inválidos no Supabase Auth.');
       }
+      });
     }
   };
 
@@ -171,13 +175,29 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenDelayModal 
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  {loginType === 'gestora' ? 'Senha Operacional da Gestora' : 'Chave de Acesso Dev Master'}
+                  E-mail
+                </label>
+                <input
+                  type="email"
+                  value={inputEmail}
+                  onChange={(e) => setInputEmail(e.target.value)}
+                  placeholder="Digite seu e-mail"
+                  autoComplete="email"
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                  Senha
                 </label>
                 <input
                   type="password"
                   value={inputPassword}
                   onChange={(e) => setInputPassword(e.target.value)}
-                  placeholder={loginType === 'gestora' ? 'Digite a senha' : 'Digite a chave de acesso'}
+                  placeholder="Digite sua senha"
+                  autoComplete="current-password"
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500"
                   required
                 />

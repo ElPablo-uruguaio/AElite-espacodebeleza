@@ -13,6 +13,7 @@ export const PDVCheckout: React.FC<PDVCheckoutProps> = ({ appointment, onClose }
   const { checkoutAppointment, services, employees, settings, servicoProdutos, estoque } = useSalon();
   const [paymentMethod, setPaymentMethod] = useState<'pos' | 'virtual' | 'pix' | 'dinheiro'>('pos');
   const [completed, setCompleted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const servico = services.find(s => s.id === appointment.servico_id);
   const profissional = employees.find(e => e.id === appointment.profissional_id);
@@ -29,9 +30,14 @@ export const PDVCheckout: React.FC<PDVCheckoutProps> = ({ appointment, onClose }
       return { nome: prod?.nome_produto || 'Produto', qtd: sp.quantidade_consumida, unidade: prod?.unidade_medida || 'un' };
     });
 
-  const handleFinalizeCheckout = () => {
-    checkoutAppointment(appointment.id, paymentMethod);
-    setCompleted(true);
+  const handleFinalizeCheckout = async () => {
+    setError(null);
+    try {
+      await checkoutAppointment(appointment.id, paymentMethod);
+      setCompleted(true);
+    } catch {
+      setError('Não foi possível encerrar o procedimento. Tente novamente.');
+    }
   };
 
   const googleReviewWaUrl = createWhatsAppGoogleReviewLink({
@@ -222,8 +228,10 @@ export const PDVCheckout: React.FC<PDVCheckoutProps> = ({ appointment, onClose }
               className="w-full rose-gradient-btn text-white font-bold py-3.5 rounded-2xl flex items-center justify-center space-x-2 shadow-lg"
             >
               <DollarSign className="w-5 h-5" />
-              <span>Receber R$ {saldoAReceber.toFixed(2)} & Dar Baixa</span>
+              <span>Encerrar Procedimento e Receber R$ {saldoAReceber.toFixed(2)}</span>
             </button>
+
+            {error && <p className="text-xs text-red-400">{error}</p>}
 
           </div>
         )}

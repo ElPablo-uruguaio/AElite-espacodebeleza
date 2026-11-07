@@ -12,6 +12,7 @@ import {
   Scissors
 } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
+import { FallbackImage } from '../common/FallbackImage';
 import { Appointment, ServiceItem, Employee } from '../../types';
 
 interface BookingModalProps {
@@ -19,13 +20,40 @@ interface BookingModalProps {
   onClose: () => void;
 }
 
+const OPENING_HOUR = 9;
+const CLOSING_HOUR = 19;
+
+const formatServicePrice = (service?: ServiceItem | null) => {
+  if (!service || service.preco_indisponivel) return 'Consultar';
+  return `R$ ${service.preco.toFixed(2).replace('.', ',')}`;
+};
+
+const getNextBusinessDate = (): string => {
+  const date = new Date();
+  while (date.getDay() === 0 || date.getDay() === 1) {
+    date.setDate(date.getDate() + 1);
+  }
+  return date.toISOString().slice(0, 10);
+};
+
+const isBusinessDate = (dateString: string): boolean => {
+  const date = new Date(`${dateString}T12:00:00`);
+  return date.getDay() >= 2 && date.getDay() <= 6;
+};
+
+const isBusinessHour = (timeString: string): boolean => {
+  const [hour, minute] = timeString.split(':').map(Number);
+  const totalMinutes = hour * 60 + minute;
+  return totalMinutes >= OPENING_HOUR * 60 && totalMinutes <= CLOSING_HOUR * 60;
+};
+
 export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onClose }) => {
   const { services, employees, employeeServiceIds, createAppointment, hasAppointmentConflict, addToWaitlist, isBlockedClient, scheduleAppointmentReminders, upsertClient } = useSalon();
 
   const [step, setStep] = useState<number>(1);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(initialService || services[0] || null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(employees[0] || null);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState<string>(getNextBusinessDate());
   const [selectedTime, setSelectedTime] = useState<string>('14:00');
   const [clientName, setClientName] = useState<string>('');
   const [clientPhone, setClientPhone] = useState<string>('');
@@ -47,7 +75,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
     if (isBlocked) return []; // Stealth Block: Return empty array silently
     
     const slots = [];
-    for (let i = 9; i <= 19; i++) {
+    for (let i = OPENING_HOUR; i <= CLOSING_HOUR; i++) {
       slots.push(`${i.toString().padStart(2, '0')}:00`);
     }
     return slots;
@@ -56,18 +84,27 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
   const timeSlots = generateTimeSlots();
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const d = new Date(e.target.value + 'T12:00:00'); // Prevent timezone shift
-    if (d.getDay() === 0 || d.getDay() === 1) {
+    if (!isBusinessDate(e.target.value)) {
       alert('O salão funciona apenas de Terça a Sábado.');
       return;
     }
     setSelectedDate(e.target.value);
   };
 
+  const validateBusinessHours = (): boolean => {
+    if (!isBusinessDate(selectedDate) || !isBusinessHour(selectedTime)) {
+      alert('O horário de atendimento é de terça a sábado, das 9h às 19h. Escolha uma data e horário dentro desse período.');
+      return false;
+    }
+    return true;
+  };
+
   const handleConfirmBooking = () => {
     if (!selectedService || !clientName || !clientPhone || !selectedDate || !selectedTime) return;
 
     if (isBlocked) return;
+
+    if (!validateBusinessHours()) return;
 
     const dataHoraIso = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
 
@@ -100,6 +137,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
 
   const handleJoinWaitlist = () => {
     if (isBlocked) return;
+    if (!validateBusinessHours()) return;
     // Build waitlist entry without id (added in context)
     const entry = {
       cliente_nome: clientName,
@@ -155,7 +193,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
                   >
                     <div>
                       <p className="text-sm font-bold">{srv.nome}</p>
-                      <p className="text-xs text-zinc-400">{srv.duracao} min • R$ {srv.preco.toFixed(2)}</p>
+                      <p className="text-xs text-zinc-400">{srv.duracao} min • {formatServicePrice(srv)}</p>
                     </div>
                     {selectedService?.id === srv.id && <CheckCircle2 className="w-5 h-5 text-rose-400" />}
                   </button>
@@ -178,7 +216,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
                         : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
                     }`}
                   >
-                    <img
+                    <FallbackImage
                       src={emp.foto_url || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80'}
                       alt={emp.nome}
                       className="w-12 h-12 rounded-full object-cover border border-zinc-700"
@@ -365,7 +403,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
               </div>
               <div className="border-t border-zinc-800 pt-2 flex justify-between text-sm">
                 <span className="text-zinc-300 font-semibold">Valor Total:</span>
-                <span className="font-extrabold text-white">R$ {selectedService?.preco.toFixed(2)}</span>
+                <span className="font-extrabold text-white">{formatServicePrice(selectedService)}</span>
               </div>
             </div>
 
@@ -407,7 +445,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialService, onCl
                <p className="font-bold text-emerald-400">O que acontece agora?</p>
                <p>1. Você receberá um WhatsApp confirmando sua reserva.</p>
                <p>2. No dia do atendimento, procure o balcão.</p>
-               <p>3. O pagamento (R$ {selectedService?.preco.toFixed(2)}) será realizado no local após o serviço.</p>
+               <p>3. O pagamento ({formatServicePrice(selectedService)}) será realizado no local após o serviço.</p>
             </div>
 
             <button

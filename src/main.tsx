@@ -4,6 +4,7 @@ import App from './App.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { SalonProvider } from './context/SalonContext.tsx';
 import { NetworkStatus } from './components/common/NetworkStatus.tsx';
+import { ServiceWorkerUpdateBanner } from './components/common/ServiceWorkerUpdateBanner.tsx';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -12,6 +13,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <SalonProvider>
         <App />
         <NetworkStatus />
+        <ServiceWorkerUpdateBanner />
       </SalonProvider>
     </AuthProvider>
   </React.StrictMode>,

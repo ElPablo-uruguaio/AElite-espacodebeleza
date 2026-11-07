@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react';
-import { Cake, FileUp, MessageCircle, Plus, Users } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Cake, Download, FileUp, Loader2, MessageCircle, Plus, Users } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 import { Client } from '../../types';
 import { createWhatsAppBirthdayLink } from '../../utils/whatsapp';
+import { isSupabaseConfigured, supabase } from '../../services/supabase';
 
 interface ImportedClient {
   nome: string;
@@ -51,6 +52,30 @@ const readImportedClients = (text: string, fileName: string): ImportedClient[] =
   }).filter(client => client.nome && client.telefone);
 };
 
+const escapeCsvValue = (value: unknown): string => {
+  const text = String(value ?? '');
+  return `"${text.replace(/"/g, '""')}"`;
+};
+
+const createCsvDownload = (rows: Array<{ nome: string; cpf?: string; telefone: string; email?: string }>) => {
+  const header = ['Nome', 'CPF', 'Telefone', 'E-mail'];
+  const csv = [
+    header,
+    ...rows.map(row => [row.nome, row.cpf, row.telefone, row.email])
+  ].map(row => row.map(escapeCsvValue).join(';')).join('\r\n');
+
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const fileName = `clientes-${new Date().toISOString().slice(0, 10)}.csv`;
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  return { url, fileName };
+};
+
 export const ClientManager: React.FC = () => {
   const { clients, upsertClient, importClients, checkBirthdayClients, sendPushNotification, settings } = useSalon();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -60,7 +85,14 @@ export const ClientManager: React.FC = () => {
   const [birthDate, setBirthDate] = useState('');
   const [birthdaySent, setBirthdaySent] = useState(false);
   const [importMessage, setImportMessage] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportUrl, setExportUrl] = useState<string | null>(null);
+  const [exportFileName, setExportFileName] = useState('');
   const birthdayClients = checkBirthdayClients();
+
+  useEffect(() => () => {
+    if (exportUrl) URL.revokeObjectURL(exportUrl);
+  }, [exportUrl]);
 
   const handleAdd = (event: React.FormEvent) => {
     event.preventDefault();
@@ -89,14 +121,61 @@ export const ClientManager: React.FC = () => {
     setBirthdaySent(true);
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    setImportMessage('');
+
+    try {
+      let rows: Array<{ nome: string; cpf?: string; telefone: string; email?: string }> = clients;
+
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('appointments')
+          .select('cliente_nome, cliente_phone')
+          .order('cliente_nome');
+
+        if (error) throw error;
+
+        const uniqueClients = new Map<string, { nome: string; telefone: string; cpf?: string; email?: string }>();
+        (data || []).forEach(appointment => {
+          const key = appointment.cliente_phone || appointment.cliente_nome;
+          if (!uniqueClients.has(key)) {
+            uniqueClients.set(key, {
+              nome: appointment.cliente_nome,
+              telefone: appointment.cliente_phone
+            });
+          }
+        });
+        rows = Array.from(uniqueClients.values());
+      }
+
+      const download = createCsvDownload(rows);
+      if (exportUrl) URL.revokeObjectURL(exportUrl);
+      setExportUrl(download.url);
+      setExportFileName(download.fileName);
+      setImportMessage(`${rows.length} cliente(s) exportado(s) com sucesso.`);
+    } catch {
+      setImportMessage('Não foi possível consultar o Supabase. Exporte os dados locais ou tente novamente.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-xl space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
         <div><h2 className="text-xl font-bold text-white flex items-center gap-2"><Users className="w-5 h-5 text-rose-400" /> Gestão de Clientes</h2><p className="text-xs text-zinc-400 mt-1">Cadastre, importe e acompanhe os dados de contato das clientes.</p></div>
-        <label className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer"><FileUp className="w-4 h-4" /> Importar Clientes (Trinks / CSV / JSON)<input ref={fileRef} type="file" accept=".csv,.json,application/json,text/csv" onChange={handleImport} className="hidden" /></label>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={handleExport} disabled={exporting} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60">
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {exporting ? 'Exportando...' : 'Exportar CSV'}
+          </button>
+          <label className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer"><FileUp className="w-4 h-4" /> Importar Clientes (Trinks / CSV / JSON)<input ref={fileRef} type="file" accept=".csv,.json,application/json,text/csv" onChange={handleImport} className="hidden" /></label>
+        </div>
       </header>
 
       {importMessage && <p className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-xl px-4 py-3">{importMessage}</p>}
+      {exportUrl && <a href={exportUrl} download={exportFileName} className="inline-flex items-center gap-2 text-xs font-bold text-emerald-300 hover:text-emerald-200"><Download className="w-4 h-4" /> Baixar {exportFileName} novamente</a>}
 
       <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-zinc-950 border border-zinc-800 rounded-2xl p-4">
         <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome completo *" className="bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-rose-500" required />

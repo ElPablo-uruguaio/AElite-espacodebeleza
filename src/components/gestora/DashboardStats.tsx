@@ -8,7 +8,7 @@ export const DashboardStats: React.FC = () => {
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayApps = appointments.filter(a => a.data_hora.slice(0, 10) === todayStr);
 
-  const todayCompleted = todayApps.filter(a => a.status === 'concluido');
+  const todayCompleted = todayApps.filter(a => a.status === 'concluido' || (a.status as string) === 'pago');
   const todayRevenue = todayCompleted.reduce((acc, a) => acc + a.valor_total, 0);
 
   const upcomingApp = todayApps.find(a => a.status === 'confirmado' || a.status === 'aguardando_confirmacao');

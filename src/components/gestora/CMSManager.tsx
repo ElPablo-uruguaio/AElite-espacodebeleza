@@ -90,7 +90,7 @@ export const CMSManager: React.FC = () => {
     setStAudioUrl('');
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPassMsg(null);
     if (newPass !== confirmPass) {
@@ -98,7 +98,7 @@ export const CMSManager: React.FC = () => {
       return;
     }
 
-    if (!changePassword(currentPass, newPass)) {
+    if (!(await changePassword(currentPass, newPass))) {
       setPassMsg({ text: 'A senha atual está incorreta.', type: 'error' });
       return;
     }

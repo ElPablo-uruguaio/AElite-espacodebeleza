@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Users, DollarSign, Plus, CheckCircle2, Percent, Trash2 } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext';
 import { RecurringDiscountFrequency } from '../../types';
+import { FallbackImage } from '../common/FallbackImage';
 
 export const PayrollManager: React.FC = () => {
   const { employees, services, appointments, payroll, commissionRules, recurringDiscounts, payrollAdvances, addEmployee, registerCommissionPayout, upsertCommissionRule, addRecurringDiscount, removeRecurringDiscount, addPayrollAdvance, calculatePayroll } = useSalon();
@@ -142,7 +143,7 @@ export const PayrollManager: React.FC = () => {
               className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
             >
               <div className="flex items-center space-x-4">
-                <img
+                <FallbackImage
                   src={emp.foto_url || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80'}
                   alt={emp.nome}
                   className="w-14 h-14 rounded-2xl object-cover border border-zinc-700"

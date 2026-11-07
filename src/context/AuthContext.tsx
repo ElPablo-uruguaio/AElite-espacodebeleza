@@ -1,17 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserRole, UserProfile } from '../types';
-import { logSystemEvent } from '../services/supabase';
+import { isSupabaseConfigured, logSystemEvent, supabase } from '../services/supabase';
 import { getTeamPermissions } from '../utils/permissions';
 
 interface AuthContextType {
   user: UserProfile | null;
   role: UserRole;
   isLoggedIn: boolean;
-  loginAsGestora: (password: string) => Promise<boolean>;
-  loginAsColaborador: (password: string) => Promise<boolean>;
-  loginAsDevAdmin: (masterKey: string) => boolean;
-  changePassword: (currentPass: string, newPass: string) => boolean;
-  logout: () => void;
+  loginAsGestora: (email: string, password: string) => Promise<boolean>;
+  loginAsColaborador: (email: string, password: string) => Promise<boolean>;
+  loginAsDevAdmin: (email: string, password: string) => Promise<boolean>;
+  changePassword: (currentPass: string, newPass: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,10 +26,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return user ? user.role : 'cliente';
   });
 
-  const getStoredPassword = (roleKey: string) => {
-    return localStorage.getItem(`${roleKey}_password`) || (roleKey === 'admin' ? 'admin123' : 'colab123');
-  };
-
   useEffect(() => {
     if (user) {
       localStorage.setItem('salon_auth_user', JSON.stringify(user));
@@ -41,6 +37,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   useEffect(() => {
+    const authClient = supabase;
+    if (!authClient) return;
+
+    let mounted = true;
+    const syncSession = async () => {
+      const { data: { session } } = await authClient.auth.getSession();
+      if (!mounted) return;
+
+      if (!session) {
+        setUser(null);
+        return;
+      }
+
+      const storedUser = localStorage.getItem('salon_auth_user');
+      const localUser = storedUser ? JSON.parse(storedUser) as UserProfile : null;
+      if (localUser && localUser.email === session.user.email) {
+        setUser({ ...localUser, id: session.user.id, email: session.user.email || localUser.email });
+      } else {
+        setUser(null);
+      }
+    };
+
+    syncSession();
+    const { data: { subscription } } = authClient.auth.onAuthStateChange((_event, session) => {
+      if (!session) setUser(null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     if (user?.role === 'colaborador' && !user.team_permissions) {
       setUser(prev => prev ? {
         ...prev,
@@ -50,97 +80,100 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  const loginAsGestora = async (password: string): Promise<boolean> => {
-    const storedPass = getStoredPassword('admin');
-    if (password === storedPass) {
-      const adminUser: UserProfile = {
-        id: 'admin-001',
-        email: 'gestora@espacobelezavip.com.br',
-        full_name: 'Proprietária & Gestora',
-        role: 'admin',
-        permissions: {
-          canViewAgenda: true,
-          canViewEstoque: true,
-          canViewFinanceiro: true,
-          canManageClients: true,
-          canEditSettings: true
-        },
-        phone: '11999999999'
-      };
-      setUser(adminUser);
-      logSystemEvent('AUTH', 'Login efetuado com sucesso como Admin.', 'success');
-      return true;
-    }
-    logSystemEvent('AUTH', 'Tentativa incorreta de senha da Gestora.', 'warn');
-    return false;
+  const loginAsGestora = async (email: string, password: string): Promise<boolean> => {
+    return signInWithRole(email, password, {
+      id: '',
+      email: 'gestora@espacobelezavip.com.br',
+      full_name: 'Proprietária & Gestora',
+      role: 'admin',
+      permissions: {
+        canViewAgenda: true,
+        canViewEstoque: true,
+        canViewFinanceiro: true,
+        canManageClients: true,
+        canEditSettings: true
+      },
+      phone: '11999999999'
+    });
   };
 
-  const loginAsColaborador = async (password: string): Promise<boolean> => {
-    const storedPass = getStoredPassword('colaborador');
-    if (password === storedPass) {
-      const colabUser: UserProfile = {
-        id: 'colab-001',
-        email: 'equipe@espacobelezavip.com.br',
-        full_name: 'Equipe de Atendimento',
-        role: 'colaborador',
-        employee_id: 'emp-1',
-        team_permissions: getTeamPermissions('colab-emp-1'),
-        permissions: {
-          canViewAgenda: getTeamPermissions('colab-emp-1').canViewAgenda,
-          canViewEstoque: getTeamPermissions('colab-emp-1').canViewEstoque,
-          canViewFinanceiro: getTeamPermissions('colab-emp-1').canViewFinanceiro,
-          canManageClients: getTeamPermissions('colab-emp-1').canManageClients,
-          canEditSettings: getTeamPermissions('colab-emp-1').canEditSettings
-        },
-      };
-      setUser(colabUser);
-      logSystemEvent('AUTH', 'Login efetuado com sucesso como Colaborador.', 'success');
-      return true;
-    }
-    logSystemEvent('AUTH', 'Tentativa incorreta de senha do Colaborador.', 'warn');
-    return false;
+  const loginAsColaborador = async (email: string, password: string): Promise<boolean> => {
+    const teamPermissions = getTeamPermissions('colab-emp-1');
+    return signInWithRole(email, password, {
+      id: '',
+      email: 'equipe@espacobelezavip.com.br',
+      full_name: 'Equipe de Atendimento',
+      role: 'colaborador',
+      employee_id: 'emp-1',
+      team_permissions: teamPermissions,
+      permissions: {
+        canViewAgenda: teamPermissions.canViewAgenda,
+        canViewEstoque: teamPermissions.canViewEstoque,
+        canViewFinanceiro: teamPermissions.canViewFinanceiro,
+        canManageClients: teamPermissions.canManageClients,
+        canEditSettings: teamPermissions.canEditSettings
+      }
+    });
   };
 
-  const loginAsDevAdmin = (masterKey: string): boolean => {
-    const storedDevPassword = localStorage.getItem('dev_admin_password') || 'devmaster2026';
-    if (masterKey === storedDevPassword || masterKey === 'master') {
-      const devUser: UserProfile = {
-        id: 'dev-001',
-        email: 'devmaster@antigravity.ai',
-        full_name: 'Dev Master (Suporte Técnico)',
-        role: 'dev_admin',
-        permissions: {
-          canViewAgenda: true,
-          canViewEstoque: true,
-          canViewFinanceiro: true,
-          canManageClients: true,
-          canEditSettings: true
-        }
-      };
-      setUser(devUser);
-      logSystemEvent('AUTH', 'Acesso Dev Admin concedido via Chave Mestre.', 'success');
-      return true;
-    }
-    logSystemEvent('AUTH', 'Tentativa inválida de chave Dev Master.', 'error');
-    return false;
+  const loginAsDevAdmin = async (email: string, password: string): Promise<boolean> => {
+    return signInWithRole(email, password, {
+      id: '',
+      email: 'devmaster@antigravity.ai',
+      full_name: 'Dev Master (Suporte Técnico)',
+      role: 'dev_admin',
+      permissions: {
+        canViewAgenda: true,
+        canViewEstoque: true,
+        canViewFinanceiro: true,
+        canManageClients: true,
+        canEditSettings: true
+      }
+    });
   };
 
-  const changePassword = (currentPass: string, newPass: string): boolean => {
-    if (!user || user.role === 'dev_admin') return false;
-    const roleKey = user.role === 'admin' ? 'admin' : 'colaborador';
-    const storedPass = getStoredPassword(roleKey);
-    
-    if (currentPass === storedPass) {
-      localStorage.setItem(`${roleKey}_password`, newPass);
-      logSystemEvent('AUTH', 'Senha alterada com sucesso.', 'success');
-      return true;
+  const signInWithRole = async (email: string, password: string, profile: UserProfile): Promise<boolean> => {
+    if (!isSupabaseConfigured || !supabase) {
+      logSystemEvent('AUTH', 'Supabase não está configurado para autenticação.', 'error');
+      return false;
     }
-    return false;
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.user) {
+        const authMessage = error?.message || 'Usuário não retornado pelo Supabase.';
+        console.error(`[Auth] Falha no signInWithPassword: ${authMessage}`, {
+          email,
+          message: authMessage,
+          status: error?.status,
+          code: error?.code,
+          name: error?.name
+        });
+        logSystemEvent('AUTH', authMessage, 'warn');
+        return false;
+      }
+
+      setUser({ ...profile, id: data.user.id, email: data.user.email || email });
+      logSystemEvent('AUTH', `Login Supabase efetuado como ${profile.role}.`, 'success');
+      return true;
+    } catch (error) {
+      console.error('[Auth] Erro inesperado no signInWithPassword:', error);
+      logSystemEvent('AUTH', 'Erro inesperado durante a autenticação Supabase.', 'error');
+      return false;
+    }
   };
 
-  const logout = () => {
+  const changePassword = async (_currentPass: string, newPass: string): Promise<boolean> => {
+    if (!supabase || !user) return false;
+    const { error } = await supabase.auth.updateUser({ password: newPass });
+    if (error) return false;
+    logSystemEvent('AUTH', 'Senha alterada com sucesso.', 'success');
+    return true;
+  };
+
+  const logout = async () => {
+    if (supabase) await supabase.auth.signOut();
     setUser(null);
-    setRole('cliente');
     logSystemEvent('AUTH', 'Sessão encerrada.', 'info');
   };
 

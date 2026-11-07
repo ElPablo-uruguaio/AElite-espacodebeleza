@@ -39,7 +39,7 @@ export function generatePixPayload({
   const currency = formatField('53', '986'); // BRL
   const amount = formatField('54', valorFormatted);
   const country = formatField('58', 'BR');
-  const name = formatField('59', cleanNome || 'ESPACO BELEZA VIP');
+  const name = formatField('59', cleanNome || 'ELITE ESPACO DE BELEZA');
   const city = formatField('60', cleanCidade || 'SAO PAULO');
   const additional = formatField('62', formatField('05', txid || '***'));
 
