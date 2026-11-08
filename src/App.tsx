@@ -4,7 +4,7 @@ import { GestoraDashboard } from './pages/GestoraDashboard';
 import { DevMasterDashboard } from './pages/DevMasterDashboard';
 import { PromotionalLanding } from './pages/PromotionalLanding';
 import { CollaboratorDashboard } from './pages/CollaboratorDashboard';
-import { SalonSystemSupabase } from './components/SalonCatalog';
+import { PublicHome } from './pages/PublicHome';
 
 export const App: React.FC = () => {
   const { role, isLoggedIn } = useAuth();
@@ -75,8 +75,8 @@ export const App: React.FC = () => {
     }
   }
 
-  // Default route: Public Landing Page for clients
-  return <SalonSystemSupabase />;
+  // Default route: complete public landing page for clients
+  return <PublicHome />;
 };
 
 export default App;
